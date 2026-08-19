@@ -2,6 +2,11 @@
   "name": "deora-ecommerce",
   "version": "0.1.0",
   "private": true,
+  "allowScripts": {
+  "esbuild": true,
+  "workerd": true,
+  "unrs-resolver": true
+},
   "scripts": {
     "dev": "next dev",
     "build": "next build",
