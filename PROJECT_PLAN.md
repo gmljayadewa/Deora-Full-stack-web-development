@@ -25,7 +25,6 @@ Architecture design, database design, Figma UI (customer + admin pages), API pla
 | Day 6   | Aug 23                               | Auth Part 3: Logout, validation, error handling                                | ⏳ Upcoming    |
 | Day 7   | Aug 24  | Test auth end-to-end                                                           | ⏳ Upcoming    |
 
-_Note: Day 4 took 2 days (Aug 21-22) due to Prisma 7 config issues — this is normal, and testing (originally Day 7) can be folded into Week 4's start if needed without derailing the whole plan._
 
 ---
 
