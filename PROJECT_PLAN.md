@@ -20,10 +20,10 @@ Architecture design, database design, Figma UI (customer + admin pages), API pla
 | ------- | ------------------------------------- | ------------------------------------------------------------------------------ | -------------- |
 | Day 1-2 | Aug 18-19                             | Next.js + TypeScript + Tailwind setup, GitHub connected, folder structure      | ✅ Done        |
 | Day 3   | Aug 20                                | PostgreSQL (Neon) + Prisma schema (all models) + migration                     | ✅ Done        |
-| Day 4   | Aug 21-22                             | Auth Part 1: bcrypt setup, Prisma Client config (Prisma 7 fixes), Register API | 🔄 In Progress |
-| Day 5   | Aug 23                                | Auth Part 2: Login API + NextAuth.js session setup                             | ⏳ Upcoming    |
-| Day 6   | Aug 24                                | Auth Part 3: Logout, validation, error handling                                | ⏳ Upcoming    |
-| Day 7   | _(rolls into Week 4 Day 1 if needed)_ | Test auth end-to-end                                                           | ⏳ Upcoming    |
+| Day 4   | Aug 21                            | Auth Part 1: bcrypt setup, Prisma Client config (Prisma 7 fixes), Register API | 🔄 In Progress |
+| Day 5   | Aug 22                                | Auth Part 2: Login API + NextAuth.js session setup                             | ⏳ Upcoming    |
+| Day 6   | Aug 23                               | Auth Part 3: Logout, validation, error handling                                | ⏳ Upcoming    |
+| Day 7   | Aug 24  | Test auth end-to-end                                                           | ⏳ Upcoming    |
 
 _Note: Day 4 took 2 days (Aug 21-22) due to Prisma 7 config issues — this is normal, and testing (originally Day 7) can be folded into Week 4's start if needed without derailing the whole plan._
 
