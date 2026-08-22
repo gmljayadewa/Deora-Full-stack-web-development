@@ -1,177 +1,166 @@
-# Deora Project — Revised Day-by-Day Plan (with Buffer)
+# Deora Project — Corrected 12-Week Plan (Actual Dates)
 
-**Target Launch: Nov 12-13, 2026** 🚀 (Original Nov 9 + 3-4 day buffer)
-**Support Model:** AI-assisted (Claude helps with code, debugging, docs, concepts). "Stuck checkpoints" added to risky weeks.
-
----
-
-## PHASE 2 — FOUNDATION
-
-### WEEK 3 (Sep 1 – Sep 7): Environment Setup & Authentication
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Sep 1 | Setup GitHub, Next.js, TypeScript, Tailwind |
-| Day 2 | Sep 2 | Project structure (`app/`, `components/`, `services/`, `database/`, `utils/`) |
-| Day 3 | Sep 3 | PostgreSQL + Prisma + first migration |
-| Day 4 | Sep 4 | Auth Part 1: User model, bcrypt, Register API |
-| Day 5 | Sep 5 | Auth Part 2: Login API, NextAuth.js session |
-| Day 6 | Sep 6 | Auth Part 3: Logout, validation, error handling |
-| Day 7 | Sep 7 | Test auth end-to-end |
-
-🟢 **Checkpoint:** Low risk. Standard pattern, well-documented. No buffer needed.
+**Status check (Aug 22, 2026):** Week 1 ✅ | Week 2 ✅ | Week 3 🔄 In Progress (Day 4)
 
 ---
 
-## PHASE 3 — FRONTEND DEVELOPMENT
+## ✅ WEEK 1 (Aug 1 – Aug 7): Requirement Engineering — COMPLETE
 
-### WEEK 4 (Sep 8 – Sep 14): Website UI Development
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Sep 8 | Navbar, Footer, Layout |
-| Day 2 | Sep 9 | Homepage: Hero section |
-| Day 3 | Sep 10 | Homepage: Categories + Featured products |
-| Day 4 | Sep 11 | Product cards |
-| Day 5 | Sep 12 | Search + Filter |
-| Day 6 | Sep 13 | Product Details Page (`/products/[id]`) |
-| Day 7 | Sep 14 | UI testing (mobile/tablet/desktop) |
+SRS document, UML diagrams (Use Case, Activity, Class, ER, Sequence), tech stack approved.
 
-🟢 **Checkpoint:** Low risk.
+## ✅ WEEK 2 (Aug 9 – Aug 16): System Design & UI/UX — COMPLETE
 
-### WEEK 5 (Sep 15 – Sep 21): Cart & Checkout Frontend
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Sep 15 | Cart: Add product |
-| Day 2 | Sep 16 | Cart: Remove product |
-| Day 3 | Sep 17 | Cart: Update quantity + total |
-| Day 4 | Sep 18 | Checkout: Customer details form |
-| Day 5 | Sep 19 | Checkout: Address + Order summary |
-| Day 6 | Sep 20 | Responsive testing |
-| Day 7 | Sep 21 | Review frontend, fix bugs |
-
-🟢 **Checkpoint:** Low risk.
+Architecture design, database design, Figma UI (customer + admin pages), API planning draft.
 
 ---
 
-## PHASE 4 — BACKEND DEVELOPMENT
+## 🔄 WEEK 3 (Aug 18 – Aug 24): Environment Setup & Authentication — IN PROGRESS
 
-### WEEK 6 (Sep 22 – Sep 28): Backend API Development
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Sep 22 | API folder structure |
-| Day 2 | Sep 23 | Product API: Get products |
-| Day 3 | Sep 24 | Product API: Add product |
-| Day 4 | Sep 25 | Product API: Update/Delete |
-| Day 5 | Sep 26 | User APIs |
-| Day 6 | Sep 27 | Test all APIs (Postman/Thunder Client) |
-| Day 7 | Sep 28 | API documentation |
+| Day     | Date                                  | Task                                                                           | Status         |
+| ------- | ------------------------------------- | ------------------------------------------------------------------------------ | -------------- |
+| Day 1-2 | Aug 18-19                             | Next.js + TypeScript + Tailwind setup, GitHub connected, folder structure      | ✅ Done        |
+| Day 3   | Aug 20                                | PostgreSQL (Neon) + Prisma schema (all models) + migration                     | ✅ Done        |
+| Day 4   | Aug 21-22                             | Auth Part 1: bcrypt setup, Prisma Client config (Prisma 7 fixes), Register API | 🔄 In Progress |
+| Day 5   | Aug 23                                | Auth Part 2: Login API + NextAuth.js session setup                             | ⏳ Upcoming    |
+| Day 6   | Aug 24                                | Auth Part 3: Logout, validation, error handling                                | ⏳ Upcoming    |
+| Day 7   | _(rolls into Week 4 Day 1 if needed)_ | Test auth end-to-end                                                           | ⏳ Upcoming    |
 
-🟢 **Checkpoint:** Low risk.
-
-### WEEK 7 (Sep 29 – Oct 6): Order, Inventory & Payment ⚠️ +1 DAY BUFFER
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Sep 29 | Order System: Cart → Checkout data flow |
-| Day 2 | Sep 30 | Order System: Create Order logic |
-| Day 3 | Oct 1 | Order System: Save order to database |
-| Day 4 | Oct 2 | Inventory Logic: Stock decreases on order |
-| Day 5 | Oct 3 | PayHere: Sandbox account setup + basic integration |
-| Day 6 | Oct 4 | PayHere: Callback handling + order status update |
-| **Day 7** | **Oct 5** | **🟡 Buffer day — PayHere debugging (webhook signature, callback URL issues)** |
-| Day 8 | Oct 6 | End-to-end order testing (cart → pay → order saved) |
-
-🟡 **Checkpoint — HIGH RISK:** PayHere sandbox account approval can take time; webhook/callback debugging is the #1 place people get stuck. **If stuck by Day 6, share the error/logs immediately — don't wait till Day 7.**
+_Note: Day 4 took 2 days (Aug 21-22) due to Prisma 7 config issues — this is normal, and testing (originally Day 7) can be folded into Week 4's start if needed without derailing the whole plan._
 
 ---
 
-## PHASE 5 — AI & AUTOMATION
+## WEEK 4 (Aug 25 – Aug 31): Website UI Development
 
-### WEEK 8 (Oct 7 – Oct 13): AI Customer Assistant
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Oct 7 | Prepare product info dataset |
-| Day 2 | Oct 8 | Integrate OpenAI API (basic connection) |
-| Day 3 | Oct 9 | Build chatbot UI component |
-| Day 4 | Oct 10 | Connect chatbot UI to backend route |
-| Day 5 | Oct 11 | Prompt design & refinement |
-| Day 6 | Oct 12 | Test AI responses (accuracy, edge cases) |
-| Day 7 | Oct 13 | Polish chatbot UX |
+| Day   | Date   | Task                                     |
+| ----- | ------ | ---------------------------------------- |
+| Day 1 | Aug 25 | Navbar, Footer, Layout                   |
+| Day 2 | Aug 26 | Homepage: Hero section                   |
+| Day 3 | Aug 27 | Homepage: Categories + Featured products |
+| Day 4 | Aug 28 | Product cards                            |
+| Day 5 | Aug 29 | Search + Filter                          |
+| Day 6 | Aug 30 | Product Details Page (`/products/[id]`)  |
+| Day 7 | Aug 31 | UI testing (mobile/tablet/desktop)       |
 
-🟢 **Checkpoint:** Medium risk but AI-assisted prompt engineering speeds this up a lot — no extra buffer needed.
+## WEEK 5 (Sep 1 – Sep 7): Cart & Checkout Frontend
 
-### WEEK 9 (Oct 14 – Oct 21): n8n Automation & Notifications ⚠️ +1 DAY BUFFER
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Oct 14 | Setup n8n on VPS (Docker) |
-| **Day 2** | **Oct 15** | **🟡 Buffer day — VPS/DNS/SSL/reverse proxy troubleshooting** |
-| Day 3 | Oct 16 | n8n workflow basics + webhook node |
-| Day 4 | Oct 17 | Order automation: New Order → n8n Trigger |
-| Day 5 | Oct 18 | Order automation: Generate message → Email/WhatsApp |
-| Day 6 | Oct 19 | Inventory alert automation |
-| Day 7 | Oct 20 | Test automation flows |
-| Day 8 | Oct 21 | Fix automation bugs |
+| Day   | Date  | Task                              |
+| ----- | ----- | --------------------------------- |
+| Day 1 | Sep 1 | Cart: Add product                 |
+| Day 2 | Sep 2 | Cart: Remove product              |
+| Day 3 | Sep 3 | Cart: Update quantity + total     |
+| Day 4 | Sep 4 | Checkout: Customer details form   |
+| Day 5 | Sep 5 | Checkout: Address + Order summary |
+| Day 6 | Sep 6 | Responsive testing                |
+| Day 7 | Sep 7 | Review frontend, fix bugs         |
 
-🟡 **Checkpoint — HIGH RISK:** First-time VPS + Docker + n8n setup is where most delays happen (server access, ports, domain, SSL). **If VPS setup isn't working after ~3 hours, stop and share your terminal output/error.**
+## WEEK 6 (Sep 8 – Sep 14): Backend API Development
+
+| Day   | Date   | Task                       |
+| ----- | ------ | -------------------------- |
+| Day 1 | Sep 8  | API folder structure       |
+| Day 2 | Sep 9  | Product API: Get products  |
+| Day 3 | Sep 10 | Product API: Add product   |
+| Day 4 | Sep 11 | Product API: Update/Delete |
+| Day 5 | Sep 12 | User APIs                  |
+| Day 6 | Sep 13 | Test all APIs              |
+| Day 7 | Sep 14 | API documentation          |
+
+## WEEK 7 (Sep 15 – Sep 22): Order, Inventory & Payment ⚠️ +1 day buffer
+
+| Day       | Date       | Task                                               |
+| --------- | ---------- | -------------------------------------------------- |
+| Day 1     | Sep 15     | Order System: Cart → Checkout flow                 |
+| Day 2     | Sep 16     | Order System: Create Order logic                   |
+| Day 3     | Sep 17     | Order System: Save order to database               |
+| Day 4     | Sep 18     | Inventory Logic: Stock decreases on order          |
+| Day 5     | Sep 19     | PayHere: Sandbox setup + basic integration         |
+| Day 6     | Sep 20     | PayHere: Callback handling + order status          |
+| **Day 7** | **Sep 21** | **🟡 Buffer — PayHere webhook/callback debugging** |
+| Day 8     | Sep 22     | End-to-end order testing                           |
+
+🟡 **Watch this week:** PayHere sandbox + webhook setup is the most likely place to lose time.
+
+## WEEK 8 (Sep 23 – Sep 29): AI Customer Assistant
+
+| Day   | Date   | Task                          |
+| ----- | ------ | ----------------------------- |
+| Day 1 | Sep 23 | Prepare product info dataset  |
+| Day 2 | Sep 24 | Integrate OpenAI API          |
+| Day 3 | Sep 25 | Build chatbot UI              |
+| Day 4 | Sep 26 | Connect chatbot UI to backend |
+| Day 5 | Sep 27 | Prompt design & refinement    |
+| Day 6 | Sep 28 | Test AI responses             |
+| Day 7 | Sep 29 | Polish chatbot UX             |
+
+## WEEK 9 (Sep 30 – Oct 7): n8n Automation & Notifications ⚠️ +1 day buffer
+
+| Day       | Date      | Task                                        |
+| --------- | --------- | ------------------------------------------- |
+| Day 1     | Sep 30    | Setup n8n on VPS (Docker)                   |
+| **Day 2** | **Oct 1** | **🟡 Buffer — VPS/DNS/SSL troubleshooting** |
+| Day 3     | Oct 2     | n8n workflow basics + webhook node          |
+| Day 4     | Oct 3     | Order automation: Trigger setup             |
+| Day 5     | Oct 4     | Order automation: Email/WhatsApp send       |
+| Day 6     | Oct 5     | Inventory alert automation                  |
+| Day 7     | Oct 6     | Test automation flows                       |
+| Day 8     | Oct 7     | Fix automation bugs                         |
+
+🟡 **Watch this week:** First-time VPS + Docker + n8n setup.
+
+## WEEK 10 (Oct 8 – Oct 14): Testing & QA
+
+| Day   | Date   | Task                                |
+| ----- | ------ | ----------------------------------- |
+| Day 1 | Oct 8  | Test plan document                  |
+| Day 2 | Oct 9  | Functional testing: Login           |
+| Day 3 | Oct 10 | Functional testing: Products + Cart |
+| Day 4 | Oct 11 | Functional testing: Orders          |
+| Day 5 | Oct 12 | Security testing                    |
+| Day 6 | Oct 13 | Fix bugs (batch 1)                  |
+| Day 7 | Oct 14 | Fix bugs (batch 2) + retest         |
+
+## WEEK 11 (Oct 15 – Oct 22): Deployment & DevOps ⚠️ +1 day buffer
+
+| Day       | Date       | Task                                         |
+| --------- | ---------- | -------------------------------------------- |
+| Day 1     | Oct 15     | Production prep (env vars, secrets)          |
+| Day 2     | Oct 16     | Deploy frontend (Cloudflare Pages)           |
+| Day 3     | Oct 17     | Deploy database (Neon managed)               |
+| Day 4     | Oct 18     | GitHub Actions setup                         |
+| **Day 5** | **Oct 19** | **🟡 Buffer — CI/CD pipeline debugging**     |
+| Day 6     | Oct 20     | Automated deployment on push                 |
+| Day 7     | Oct 21-22  | Performance testing + final production check |
+
+## WEEK 12 (Oct 23 – Oct 30): Documentation, Presentation & Launch 🎉
+
+| Day       | Date       | Task                              |
+| --------- | ---------- | --------------------------------- |
+| Day 1     | Oct 23     | Docs: Introduction + Architecture |
+| Day 2     | Oct 24     | Docs: Database + Features         |
+| Day 3     | Oct 25     | Docs: Testing + Deployment        |
+| Day 4     | Oct 26     | Presentation slides               |
+| Day 5     | Oct 27     | Live demo prep                    |
+| Day 6     | Oct 28     | Polish GitHub repo                |
+| Day 7     | Oct 29     | Final review                      |
+| **Day 8** | **Oct 30** | **✅ DEORA LAUNCH**               |
 
 ---
 
-## PHASE 6 — TESTING, DEPLOYMENT & DOCUMENTATION
+## 📋 Updated Summary
 
-### WEEK 10 (Oct 22 – Oct 28): Testing & QA
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Oct 22 | Test plan document |
-| Day 2 | Oct 23 | Functional testing: Login |
-| Day 3 | Oct 24 | Functional testing: Products + Cart |
-| Day 4 | Oct 25 | Functional testing: Orders |
-| Day 5 | Oct 26 | Security testing: Auth + Validation |
-| Day 6 | Oct 27 | Fix bugs (batch 1) |
-| Day 7 | Oct 28 | Fix bugs (batch 2) + retest |
+| Milestone                     | Date                         |
+| ----------------------------- | ---------------------------- |
+| Project start (Week 1)        | Aug 1, 2026                  |
+| Current position              | Aug 22, 2026 — Week 3, Day 4 |
+| Backend + Frontend complete   | ~Sep 22, 2026                |
+| AI + Automation complete      | ~Oct 7, 2026                 |
+| Testing + Deployment complete | ~Oct 22, 2026                |
+| **Launch**                    | **~Oct 30, 2026**            |
 
-🟢 **Checkpoint:** Low risk — this week doubles as a natural buffer/catch-up week too.
-
-### WEEK 11 (Oct 29 – Nov 4): Deployment & DevOps ⚠️ +1 DAY BUFFER
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Oct 29 | Production prep (env vars, secrets, build check) |
-| Day 2 | Oct 30 | Deploy frontend (Cloudflare Pages) |
-| Day 3 | Oct 31 | Deploy database (Neon/Supabase managed) |
-| Day 4 | Nov 1 | GitHub Actions setup |
-| **Day 5** | **Nov 2** | **🟡 Buffer day — CI/CD pipeline debugging** |
-| Day 6 | Nov 3 | Automated deployment on push |
-| Day 7 | Nov 4 | Performance testing + final production check |
-
-🟡 **Checkpoint — MEDIUM RISK:** CI/CD pipelines often fail on first few runs (env var mismatches, build errors that only show in production).
-
-### WEEK 12 (Nov 5 – Nov 12/13): Documentation, Presentation & Portfolio 🎉
-| Day | Date | Task |
-|---|---|---|
-| Day 1 | Nov 5 | Docs: Introduction + Architecture |
-| Day 2 | Nov 6 | Docs: Database + Features |
-| Day 3 | Nov 7 | Docs: Testing + Deployment |
-| Day 4 | Nov 8 | Presentation slides |
-| Day 5 | Nov 9 | Live demo prep (Order → DB → n8n → Notification) |
-| Day 6 | Nov 10 | Polish GitHub repo (README, screenshots) |
-| Day 7 | Nov 11 | Final review |
-| **Day 8** | **Nov 12-13** | **✅ DEORA LAUNCH** |
-
----
-
-## 📋 Buffer Summary
-| Week | Reason | Extra Days |
-|---|---|---|
-| Week 7 | PayHere webhook/callback debugging | +1 |
-| Week 9 | VPS/Docker/n8n first-time setup | +1 |
-| Week 11 | CI/CD pipeline debugging | +1 |
-| **Total** | | **+3 days** (Nov 9 → Nov 12-13) |
-
-## 🔔 "Stuck" Rule (applies to 🟡 weeks especially)
-If you're blocked on something for **more than 2-3 hours** with no progress:
-1. Stop trying random fixes
-2. Copy the exact error message / logs
-3. Bring it here — share what you tried already
-4. We debug together instead of you losing a full day guessing
+**Buffer days included:** Week 7 (PayHere), Week 9 (VPS/n8n), Week 11 (CI/CD) — same risk areas as before, just recalculated against real dates.
 
 ## 📌 Notes
-- 🟢 weeks = standard, low-risk, AI help mainly speeds up code-writing.
-- 🟡 weeks = real-world integration risk (external services, servers) — these are the ones to watch.
-- If a 🟡 buffer day isn't needed, it becomes free catch-up time — never wasted.
+
+- This replaces the earlier "Sep 1 start" version — that one incorrectly assumed Week 3 started in September instead of continuing from your actual Aug 1 start.
+- Small day slippage (like Week 3 Day 4 taking 2 days) is normal — it doesn't require recalculating the whole plan each time. Only recalculate if a full week's worth of delay stacks up.
+- Launch moved **earlier** than the original plan (Oct 30 vs Nov 12-13) simply because your actual start date (Aug 1) was earlier than the assumed one (Sep 1) — the project length itself (12 weeks + buffers) hasn't changed.
