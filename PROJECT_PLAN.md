@@ -23,12 +23,12 @@ Architecture design, database design, Figma UI (customer + admin pages), API pla
 | Day 4   | Aug 21                            | Auth Part 1: bcrypt setup, Prisma Client config (Prisma 7 fixes), Register API |  ✅ Done |
 | Day 5   | Aug 22                                | Auth Part 2: Login API + NextAuth.js session setup                             | ✅ Done    |
 | Day 6   | Aug 23                               | Auth Part 3: Logout, validation, error handling                                | ✅ Done   |
-| Day 7   | Aug 24  | Test auth end-to-end                                                           | ⏳ Upcoming    |
+| Day 7   | Aug 24  | Test auth end-to-end                                                           | ✅ Done    |
 
 
 ---
 
-## WEEK 4 (Aug 25 – Aug 31): Website UI Development
+## WEEK 4 (Aug 25 – Aug 31): Website UI Development - completed
 
 | Day   | Date   | Task                                     |
 | ----- | ------ | ---------------------------------------- |
