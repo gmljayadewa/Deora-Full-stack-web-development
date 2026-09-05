@@ -42,16 +42,16 @@ A modern e-commerce web application built as a personal project to strengthen my
 
 ## Technologies
 - HTML
-- CSS
+- Tailwind Css
 - JavaScript
-- Next.js (Learning)
-- TypeScript (Learning)
+- Next.js 
+- TypeScript 
 
 ## Features
 - Responsive Design
 - Product Listing
 - Shopping Cart
-- Authentication (In Progress)
+- Authentication
 
 ## Status
 🚧 Currently under development.
