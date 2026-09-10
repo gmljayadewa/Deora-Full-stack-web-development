@@ -144,7 +144,7 @@ src/
 └── utils/        → Helper functions
 ```
 
-### | Week 3 - Setup & Auth | ⏳ In Progress (Day 1-3 done) |
+### | Week 3 - Setup & Auth | ⏳ In Progress (done) |
 
 - [ ] Choose database: Cloud (Neon.tech / Supabase) vs Local PostgreSQL
 - [ ] `npm install prisma @prisma/client`
@@ -165,7 +165,7 @@ src/
 | -------------------------------- | ----------------------------- |
 | Week 1 - Requirement Engineering | ✅ Complete                   |
 | Week 2 - System Design & UI/UX   | ✅ Complete                   |
-| Week 3 - Setup & Auth            | ⏳ In Progress (Day 1-2 done) |
+| Week 3 - Setup & Auth            |  ✅ Complete |
 | Week 4-12                        | 🔜 Upcoming                   |
 
 **Target deadline:** October 30, 2026
