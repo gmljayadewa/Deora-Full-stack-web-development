@@ -153,6 +153,56 @@ src/
 - [ ] Define `User`, `Product`, `Category` models in `schema.prisma`
 - [ ] `npx prisma migrate dev`
 
+## Week 4 - Completed
+## Week 5 - Completed
+
+## Week 6 - Backend API Development
+
+### Day 1 - Product APIs
+
+#### Task
+- GET /api/products
+- POST /api/products
+- PUT /api/products/:id
+- DELETE /api/products/:id
+
+### Learning Goals
+
+- Understand REST API
+- Understand HTTP methods
+- Understand Request → API → Database → Response flow
+- Understand Prisma database operations
+- Understand input validation
+- Understand error handling
+- Understand authentication & authorization basics
+- Develop security thinking
+- Test APIs
+- Explain my own code
+
+### GET Products - Thinking
+
+1. Who sends the request?
+→ Customer / frontend.
+
+2. What does the request ask for?
+→ Customer wants to retrieve/view products.
+
+3. Where is the product data stored?
+→ PostgreSQL database.
+
+4. How does the API get the data?
+→ API uses Prisma to get product data from PostgreSQL.
+
+5. What does the API return?
+→ Product data inside an HTTP response.
+
+6. What happens if the database fails?
+→ API handles the error and normally returns 500 Internal Server Error.
+
+7. Who is allowed to use this API?
+→ For GET products, usually customers/visitors can access it. Authentication may not be required.
+→ For Add/Update/Delete products, only authorized admins should be allowed.
+
 ### ⏳ Parallel Task
 
 - Next.js crash course (video-based learning, active-watching method: pause + type along)
