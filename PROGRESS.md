@@ -179,29 +179,32 @@ src/
 - Test APIs
 - Explain my own code
 
-### GET Products - Thinking
 
-1. Who sends the request?
-→ Customer / frontend.
+### Product APIs
 
-2. What does the request ask for?
-→ Customer wants to retrieve/view products.
+#### GET Products - My Understanding
 
-3. Where is the product data stored?
-→ PostgreSQL database.
+Customer wants to see Deora products.
 
-4. How does the API get the data?
-→ API uses Prisma to get product data from PostgreSQL.
+Frontend sends a GET request to the Product API.
 
-5. What does the API return?
-→ Product data inside an HTTP response.
+The API gets product data from the database through Prisma.
 
-6. What happens if the database fails?
-→ API handles the error and normally returns 500 Internal Server Error.
+The API sends the product data back to the frontend.
 
-7. Who is allowed to use this API?
-→ For GET products, usually customers/visitors can access it. Authentication may not be required.
-→ For Add/Update/Delete products, only authorized admins should be allowed.
+#### Things I Learned
+
+- GET is used to retrieve data.
+- API acts as the communication layer between frontend and database.
+- Prisma is used to communicate with the database.
+- PostgreSQL stores the product data.
+
+#### Things I Don't Understand Yet
+
+- How Next.js API route works
+- How Prisma gets data from PostgreSQL
+- How the GET request reaches route.ts
+- How the response reaches the frontend
 
 ### ⏳ Parallel Task
 
