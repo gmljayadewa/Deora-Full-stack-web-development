@@ -25,14 +25,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (product: Product, quantity = 1) => {
     setItems((prev) => {
+      // Check if the item is already in the cart
       const existing = prev.find((item) => item.product.id === product.id);
+
       if (existing) {
+        // If it exists, update the quantity immutably
         return prev.map((item) =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       }
+
+      // If it's a new item, add it to the array
       return [...prev, { product, quantity }];
     });
   };

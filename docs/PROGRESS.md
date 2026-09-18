@@ -106,7 +106,7 @@ Original Figma designs were feature-rich beyond SRS scope and 10-week timeline. 
 
 ---
 
-## Week 3 - Environment Setup & Authentication (In Progress)
+## Week 3 - Environment Setup & Authentication (completed)
 
 ### ✅ Day 1-2 - Project Setup
 
@@ -212,13 +212,66 @@ The API sends the product data back to the frontend.
 
 ---
 
+## Week 4 - (completed)
+
+## Week 5 - (completed)
+
+## Week 6 - Backend API Development
+
+### Day i - API structure complete
+
+### Day 2 - Product APIs
+
+#### Task
+
+- GET /api/products
+- POST /api/products
+- PUT /api/products/:id
+- DELETE /api/products/:id
+
+### Learning Goals
+
+- Understand REST API
+- Understand HTTP methods
+- Understand Request → API → Database → Response flow
+- Understand Prisma database operations
+- Understand input validation
+- Understand error handling
+- Understand authentication & authorization basics
+- Develop security thinking
+- Test APIs
+- Explain my own code
+
+### GET Products - Thinking
+
+1. Who sends the request?
+   My answer: Customer
+
+2. What does the request ask for?
+   My answer:
+
+3. Where is the product data stored?
+   My answer:
+
+4. How does the API get the data?
+   My answer:
+
+5. What does the API return?
+   My answer:
+
+6. What happens if the database fails?
+   My answer:
+
+7. Who is allowed to use this API?
+   My answer:
+
 ## 🎯 Overall Status Summary
 
-| Phase                            | Status                        |
-| -------------------------------- | ----------------------------- |
-| Week 1 - Requirement Engineering | ✅ Complete                   |
-| Week 2 - System Design & UI/UX   | ✅ Complete                   |
-| Week 3 - Setup & Auth            |  ✅ Complete |
-| Week 4-12                        | 🔜 Upcoming                   |
+| Phase                            | Status      |
+| -------------------------------- | ----------- |
+| Week 1 - Requirement Engineering | ✅ Complete |
+| Week 2 - System Design & UI/UX   | ✅ Complete |
+| Week 3 - Setup & Auth            | ✅ Complete |
+| Week 4-12                        | 🔜 Upcoming |
 
 **Target deadline:** October 30, 2026
