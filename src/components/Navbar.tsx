@@ -7,7 +7,11 @@ import { useRouter } from 'next/navigation';
 import { Search, User, Heart, ShoppingCart, Menu, X } from 'lucide-react';
 import AnnouncementBar from './AnnouncementBar';
 import { useCart } from '../context/CartContext';
-import { NavLink } from '../../prisma.config';
+
+type NavLink = {
+  label: string;
+  href: string;
+};
 
 const NAV_LINKS: NavLink[] = [
   { label: 'Home', href: '/' },
