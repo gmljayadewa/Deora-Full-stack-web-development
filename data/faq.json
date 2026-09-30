@@ -1,0 +1,95 @@
+{
+  "_note": "Answers marked dependsOnStoreInfo must be updated when store-info.json changes.",
+  "faq": [
+    {
+      "question": "How long does delivery take?",
+      "answer": "Delivery usually takes 2-4 working days after your order is confirmed.",
+      "dependsOnStoreInfo": true
+    },
+    {
+      "question": "How much is delivery?",
+      "answer": "Delivery costs Rs. 350 per order. It is free for orders over Rs. 5000.",
+      "dependsOnStoreInfo": true
+    },
+    {
+      "question": "Do you deliver outside Colombo?",
+      "answer": "Yes. We deliver island-wide within Sri Lanka.",
+      "dependsOnStoreInfo": true
+    },
+    {
+      "question": "Which payment methods do you accept?",
+      "answer": "You can pay by card through PayHere, or choose cash on delivery.",
+      "dependsOnStoreInfo": true
+    },
+    {
+      "question": "Is online payment safe?",
+      "answer": "Card payments are handled by PayHere. We do not store your card details on our website.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "Can I return a product?",
+      "answer": "If your order arrives damaged or is the wrong item, contact us within 7 days of delivery and we will arrange a replacement or refund. Opened food products cannot be returned unless they are faulty.",
+      "dependsOnStoreInfo": true
+    },
+    {
+      "question": "How can I contact you?",
+      "answer": "You can call us on +94 XX XXX XXXX or email hello@deora.example, Monday to Saturday, 9:00 AM to 5:00 PM.",
+      "dependsOnStoreInfo": true
+    },
+    {
+      "question": "Is this product a medicine?",
+      "answer": "No. Our products are food and herbal supplements. They are not medicine and do not replace medical treatment. Please ask your doctor if you have a health question.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "Can I take these products if I am pregnant or breastfeeding?",
+      "answer": "Please ask your doctor before using any herbal product during pregnancy or breastfeeding.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "Can I take these products with my medicine?",
+      "answer": "Please ask your doctor or pharmacist first. I cannot give advice about mixing herbal products with medicine.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "Will this product cure my illness?",
+      "answer": "I am sorry, I cannot answer questions about treating or curing illness. Our products are not medicine. Please speak to your doctor.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "How much should I take?",
+      "answer": "Please follow the usage instructions on the product page and on the product label. For personal health advice, ask your doctor.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "I have an allergy. Is this product safe for me?",
+      "answer": "Please check the ingredients list on the product page and on the package. If you are not sure, ask your doctor before you order. I cannot confirm that a product is free from an allergen unless it is clearly stated in the ingredients.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "How should I store the products?",
+      "answer": "Keep them in a cool, dry place, away from direct sunlight, and close the pack tightly after use.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "How do I make your herbal tea?",
+      "answer": "Please check the usage instructions on the product page for that tea. Each tea may be prepared a little differently.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "Is a product in stock?",
+      "answer": "Each product page and my product list show if it is in stock or out of stock. If an item is out of stock, please contact us to ask when it will be available again.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "Can I change or cancel my order?",
+      "answer": "Please contact us as soon as possible with your order details. If the order has not been shipped yet, we will try to help.",
+      "dependsOnStoreInfo": false
+    },
+    {
+      "question": "Do you sell in bulk or for wholesale?",
+      "answer": "Please contact us with the product and the quantity you need, and our team will reply to you.",
+      "dependsOnStoreInfo": false
+    }
+  ]
+}

@@ -58,6 +58,8 @@ model Product {
 
   name        String
   description String?
+  ingredients String
+  usage       String
   price       Decimal  @db.Decimal(10, 2)
   image       String?
   isActive    Boolean  @default(true)

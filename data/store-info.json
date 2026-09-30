@@ -1,0 +1,32 @@
+{
+  "_note": "PLACEHOLDER VALUES. Replace every section marked _placeholder: true with real client details before launch.",
+  "brand": {
+    "_placeholder": false,
+    "name": "Deora",
+    "sells": "Herbal capsules, herbal teas, herbal powders, spices and curry powders, cookies, porridge mixes and pickles"
+  },
+  "delivery": {
+    "_placeholder": true,
+    "areas": "Island-wide delivery within Sri Lanka",
+    "time": "2-4 working days after the order is confirmed",
+    "fee": "Rs. 350 per order",
+    "freeDeliveryOver": "Rs. 5000"
+  },
+  "payment": {
+    "_placeholder": true,
+    "methods": [
+      "Card payments through PayHere",
+      "Cash on delivery"
+    ]
+  },
+  "returns": {
+    "_placeholder": true,
+    "policy": "If a product arrives damaged or is not the one you ordered, contact us within 7 days of delivery and we will arrange a replacement or refund. Opened food products cannot be returned unless they are faulty."
+  },
+  "contact": {
+    "_placeholder": true,
+    "phone": "+94 XX XXX XXXX",
+    "email": "hello@deora.example",
+    "hours": "Monday to Saturday, 9:00 AM to 5:00 PM"
+  }
+}
