@@ -7,7 +7,7 @@
     "description": "Deora Amla Capsules are made from amla (Indian gooseberry), packed into easy-to-take capsules for daily use. Amla (nelli) is valued in Ayurvedic tradition and is a natural source of vitamin C. Benefits: A natural source of vitamin C, traditionally used to support immunity and general wellbeing. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Amla powder",
     "usage": "take 2 capsuels twice a day ",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vdp2001b3wvj7moeiw0s",
@@ -17,7 +17,7 @@
     "description": "Deora Amla Powder is finely ground amla (Indian gooseberry). Amla (nelli) is valued in Ayurvedic tradition and is a natural source of vitamin C. Benefits: A natural source of vitamin C, traditionally used to support immunity and general wellbeing. It can be mixed into warm water, porridge, or smoothies, or used in cooking. Store in an airtight container in a cool, dry place.",
     "ingredients": "Amla powder",
     "usage": "Mix 1 tsp with a cup of warm water, or add to porridge, smoothies, or food.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vcsy00193wvjt1kp59oo",
@@ -27,7 +27,7 @@
     "description": "Deora Amla Tea is a herbal tea made from amla (Indian gooseberry). Amla (nelli) is valued in Ayurvedic tradition and is a natural source of vitamin C. Benefits: A natural source of vitamin C, traditionally used to support immunity and general wellbeing. Enjoy it hot in the morning or evening. Store in an airtight container away from sunlight.",
     "ingredients": "Dried amla (Indian gooseberry)",
     "usage": "Add 1 tsp to a cup of hot water and steep for 5 minutes. Strain and drink, with honey or jaggery if you like.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1ut6q00083wvjy8fdzrie",
@@ -37,7 +37,7 @@
     "description": "Deora Ashwagandha Capsules are made from ashwagandha root, packed into easy-to-take capsules for daily use. Ashwagandha is a popular herb in Ayurvedic tradition. Benefits: Traditionally used in Ayurveda to support energy and help the body cope with everyday stress. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Ashwagandha powder",
     "usage": "take 1 capsules twice a day",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1uu34000a3wvjtakwrtgy",
@@ -47,7 +47,7 @@
     "description": "Deora Ashwagandha Tea is a herbal tea made from ashwagandha root. Ashwagandha is a popular herb in Ayurvedic tradition. Benefits: Traditionally used in Ayurveda to support energy and help the body cope with everyday stress. Enjoy it hot in the morning or evening. Store in an airtight container away from sunlight.",
     "ingredients": "Dried ashwagandha root",
     "usage": "Add 1 tsp to a cup of hot water and steep for 5 minutes. Strain and drink, with honey or jaggery if you like.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1v3u4000r3wvjfsm5fcn4",
@@ -57,7 +57,7 @@
     "description": "Deora Beetroot Capsules are made from beetroot, packed into easy-to-take capsules for daily use. Beetroot is a nutritious root vegetable with a naturally earthy, sweet flavour. Benefits: A natural source of fibre and folate, traditionally enjoyed to support energy and general wellbeing. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Beetroot powder",
     "usage": "Take 2 capsueles twice a day and take it atleast 3 month get specific results",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1v4sz000t3wvjtmqa1fiy",
@@ -67,7 +67,7 @@
     "description": "Deora Beetroot Powder is finely ground beetroot. Beetroot is a nutritious root vegetable with a naturally earthy, sweet flavour. Benefits: A natural source of fibre and folate, traditionally enjoyed to support energy and general wellbeing. It can be mixed into warm water, porridge, or smoothies, or used in cooking. Store in an airtight container in a cool, dry place.",
     "ingredients": "Beetroot powder",
     "usage": "Mix 1 tsp with a cup of warm water, or add to porridge, smoothies, or food.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1v5rw000v3wvj2lques29",
@@ -77,7 +77,7 @@
     "description": "Deora Carrot Capsules are made from carrot, packed into easy-to-take capsules for daily use. Carrot is a nutritious root vegetable with a naturally sweet flavour. Benefits: A natural source of beta-carotene, which the body converts to vitamin A. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Carrot powder",
     "usage": "Take 2 capsueles twice a day and take it atleast 3 month get specific results",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1v6t9000x3wvjv4xc0rf0",
@@ -87,7 +87,7 @@
     "description": "Deora Carrot Powder is finely ground carrot. Carrot is a nutritious root vegetable with a naturally sweet flavour. Benefits: A natural source of beta-carotene, which the body converts to vitamin A. It can be mixed into warm water, porridge, or smoothies, or used in cooking. Store in an airtight container in a cool, dry place.",
     "ingredients": "Carrot powder",
     "usage": "Mix 1 tsp with a cup of warm water, or add to porridge, smoothies, or food.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "prod003",
@@ -97,7 +97,7 @@
     "description": "Deora Cinnamon Capsules are made from Sri Lankan cinnamon, packed into easy-to-take capsules for daily use. Sri Lankan cinnamon is known for its sweet, warm aroma and is used in cooking and herbal drinks. Benefits: Traditionally used to add warmth and to support digestion. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Cinnamon powder",
     "usage": "take 1 capsuels twice a day.but if you have medical condttion pelase get the afdvide from medical officer",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vi9e001j3wvjtveszdjn",
@@ -297,7 +297,7 @@
     "description": "Deora Mix Porridge is a blended porridge mix made for a quick, filling meal. Benefits: A nutritious, filling meal in minutes. Store in an airtight container in a cool, dry place.",
     "ingredients": "moringa,gotukola,welpenela,iramusu,cinnamon,garlic,pepper,coconut milk,chick peas,mung beans,salt",
     "usage": "Cook 3 to 4 tablespoons in water or milk, stirring until smooth and thick.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "prod001",
@@ -307,7 +307,7 @@
     "description": "Deora Moringa Capsules are made from moringa leaves, packed into easy-to-take capsules for daily use. Moringa (murunga) leaves are a well-known traditional green in Sri Lanka. Benefits: A nutritious green, traditionally valued as a natural source of vitamins and minerals. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Moringa powder",
     "usage": "Take a 2 capsules morning and the evening ",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1usai00063wvjq7ympwbm",
@@ -317,7 +317,7 @@
     "description": "Deora Moringa Powder is finely ground moringa leaves. Moringa (murunga) leaves are a well-known traditional green in Sri Lanka. Benefits: A nutritious green, traditionally valued as a natural source of vitamins and minerals. It can be mixed into warm water, porridge, or smoothies, or used in cooking. Store in an airtight container in a cool, dry place.",
     "ingredients": "Moringa powder",
     "usage": "Mix 1 tsp with a cup of warm water, or add to porridge, smoothies, or food.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vfn6001f3wvjol539d2n",
@@ -327,7 +327,7 @@
     "description": "Deora Nelli Rasakida Capsules are made from amla (nelli) and rasakinda (Tinospora cordifolia), packed into easy-to-take capsules for daily use. Both amla and rasakinda are traditional Sri Lankan and Ayurvedic herbs. Benefits: Traditionally used to support immunity and general wellbeing. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Nelli Rasakida powder",
     "usage": "take 2 capsuels twice a day and drink more water",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vepn001d3wvjkxpnjjmd",
@@ -337,7 +337,7 @@
     "description": "Deora Nelli Rasakida Powder is finely ground amla (nelli) and rasakinda (Tinospora cordifolia). Both amla and rasakinda are traditional Sri Lankan and Ayurvedic herbs. Benefits: Traditionally used to support immunity and general wellbeing. It can be mixed into warm water, porridge, or smoothies, or used in cooking. Store in an airtight container in a cool, dry place.",
     "ingredients": "Nelli Rasakida powder",
     "usage": "Mix 1 tsp with a cup of warm water, or add to porridge, smoothies, or food.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vn38001u3wvjzy8umkbf",
@@ -347,7 +347,7 @@
     "description": "Deora Nelli Rasakida Tea is a herbal tea made from amla (nelli) and rasakinda (Tinospora cordifolia). Both amla and rasakinda are traditional Sri Lankan and Ayurvedic herbs. Benefits: Traditionally used to support immunity and general wellbeing. Enjoy it hot in the morning or evening. Store in an airtight container away from sunlight.",
     "ingredients": "Dried amla, rasakinda",
     "usage": "Add 1 tsp to a cup of hot water and steep for 5 minutes. Strain and drink, with honey or jaggery if you like.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vkbp001o3wvjnm6jgvdi",
@@ -357,7 +357,7 @@
     "description": "Deora Nutrition Porridge is a wholesome porridge mix for breakfast or a light meal. Benefits: A filling, nutritious meal. Store in an airtight container in a cool, dry place.",
     "ingredients": "mung beans,barli,chick peas,salt,coconut milk,pepper",
     "usage": "Cook 3 to 4 tablespoons in water or milk, stirring until smooth and thick.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vm4t001s3wvjcjblmvjs",
@@ -367,7 +367,7 @@
     "description": "Deora Rasakida Capsules are made from rasakinda (Tinospora cordifolia), packed into easy-to-take capsules for daily use. Rasakinda is a traditional Sri Lankan and Ayurvedic herb. Benefits: Traditionally used to support immunity and general wellbeing. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Rasakida powder",
     "usage": "take 2 capsuels twice a day ",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1vox1001y3wvjcttblah4",
@@ -377,7 +377,7 @@
     "description": "Deora Roasted Curry Powder is made from spices roasted before grinding, giving a deeper, richer aroma and flavour. Benefits: Gives curries a rich, authentic Sri Lankan flavour. Store in an airtight container in a cool, dry place away from moisture.",
     "ingredients": "Roasted coriander, cumin, fennel, chilli, black pepper, curry leaves",
     "usage": "Add to curries while cooking and adjust the amount to taste.",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1uuz2000c3wvjiejqlaie",
@@ -387,7 +387,7 @@
     "description": "Deora Turmeric Capsules are made from turmeric, packed into easy-to-take capsules for daily use. Turmeric is a staple spice in Sri Lankan cooking and traditional practice. Benefits: Traditionally valued to support general wellbeing. Store in a cool, dry place away from sunlight, tightly closed. This is a food supplement, not a medicine. Please consult a doctor before use if you are pregnant, nursing, or taking medication.",
     "ingredients": "Turmeric powder",
     "usage": "Take 1 capsules morning before eating",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   },
   {
     "id": "cmuo1uvvw000e3wvj4y6h94el",
@@ -397,6 +397,6 @@
     "description": "Deora Turmeric Powder is finely ground turmeric. Turmeric is a staple spice in Sri Lankan cooking and traditional practice. Benefits: Traditionally valued to support general wellbeing. It can be mixed into warm water, porridge, or smoothies, or used in cooking. Store in an airtight container in a cool, dry place.",
     "ingredients": "Turmeric powder",
     "usage": "Add 1 tsp to a cup of hot water and steep for 5 minutes. Strain and drink, with honey or jaggery if you like.and better to add honey spoon",
-    "stockStatus": "out_of_stock"
+    "stockStatus": "in_stock"
   }
 ]
