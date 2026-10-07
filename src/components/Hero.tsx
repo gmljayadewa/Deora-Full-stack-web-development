@@ -21,7 +21,7 @@ export default function Hero() {
       {/* Hero banner with background image */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="/hero-forest-bg.jpg" alt="" fill className="object-cover" priority />
+          <Image src="/../hero.png" alt="" fill className="object-cover" priority />
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.25)' }} />
         </div>
 

@@ -138,7 +138,7 @@ export default function CartPage() {
           </div>
           <div className="mt-2 flex items-center justify-between text-sm">
             <span style={{ color: 'var(--color-muted)' }}>Delivery</span>
-            <span style={{ color: 'var(--color-ink)' }}>Free</span>
+            <span style={{ color: 'var(--color-ink)' }}>400</span>
           </div>
           <div
             className="mt-4 flex items-center justify-between border-t pt-4 text-base font-bold"

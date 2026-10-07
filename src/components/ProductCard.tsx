@@ -58,7 +58,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
       <Link
         href={`/products/${product.id}`}
-        className={`line-clamp-2 min-h-[2.5rem] text-sm font-medium ${product.category ? '' : 'mt-3'}`}
+        className={`line-clamp-2 h-10 text-sm font-medium ${product.category ? '' : 'mt-3'}`}
         style={{ color: 'var(--color-ink)' }}
       >
         {product.name}

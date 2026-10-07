@@ -6,6 +6,7 @@ export type Product = {
   reviewCount: number;
   price: number;
   image?: string;
+  images?: string[];
   description?: string;
 };
 
@@ -13,15 +14,21 @@ export const CATEGORIES = ['All', 'Wellness', 'Herbal Tea', 'Kitchen Essentials'
 
 export const PRODUCTS: Product[] = [
   {
-    id: 'gotukola-capsules',
-    name: 'Gotukola Capsules',
-    category: 'Wellness',
-    rating: 4.5,
-    reviewCount: 128,
-    price: 1200,
-    image: '/images/products/gotukola-capsules.png',
-    description: 'Made from pure Gotukola leaf extract, these capsules support mental clarity, skin health and overall wellness. 100% natural, no artificial additives.',
-  },
+  id: 'gotukola-capsules',
+  name: 'Gotukola Capsules',
+  category: 'Wellness',
+  rating: 4.5,
+  reviewCount: 128,
+  price: 1200,
+  image: '/images/products/gotukola-capsules.png',
+  images: [
+    '/images/products/gotukola-capsules.png',
+    '/images/products/gotukola-capsules.png',
+    '/images/products/gotukola-capsules.png',
+    '/images/products/gotukola-capsules.png',
+  ],
+  description: 'Made from pure Gotukola leaf extract, these capsules support mental clarity, skin health and overall wellness. 100% natural, no artificial additives.',
+},
 
   {
     id: 'moringa-Capsules',
@@ -31,6 +38,12 @@ export const PRODUCTS: Product[] = [
     reviewCount: 96,
     price: 950,
     image: '/images/products/moringa.png',
+    images: [
+      '/images/products/moringa.png',
+      '/images/products/moringa.png',
+      '/images/products/moringa.png',
+      '/images/products/moringa.png',
+    ],
     description: 'Nutrient-dense Moringa leaf powder, packed with vitamins and antioxidants. Add to smoothies, tea, or meals for a daily wellness boost.',
   },
 
@@ -42,6 +55,12 @@ export const PRODUCTS: Product[] = [
     reviewCount: 78,
     price: 650,
     image: '/images/products/ceylon-cinnamon.png',
+    images: [
+      '/images/products/ceylon-cinnamon.png',
+      '/images/products/ceylon-cinnamon.png',
+      '/images/products/ceylon-cinnamon.png',
+      '/images/products/ceylon-cinnamon.png',
+    ],
     description: 'Authentic Ceylon cinnamon sticks, hand-picked and sun-dried. Sweeter and milder than regular cinnamon, perfect for cooking and baking.',
   },
 
@@ -53,6 +72,12 @@ export const PRODUCTS: Product[] = [
     reviewCount: 64,
     price: 750,
     image: '/images/products/Keselmuwa.png',
+    images: [
+      '/images/products/Keselmuwa.png',
+      '/images/products/Keselmuwa.png',
+      '/images/products/Keselmuwa.png',
+      '/images/products/Keselmuwa.png',
+    ],
     description: 'Pure, high-curcumin turmeric powder sourced from local farms. Ideal for cooking and natural wellness remedies.',
   },
 
@@ -62,6 +87,12 @@ export const PRODUCTS: Product[] = [
     category: 'Wellness',
     rating: 4.5,
     reviewCount: 53,
+    images: [
+      '/images/products/neem-capsules.png',
+      '/images/products/neem-capsules.png',
+      '/images/products/neem-capsules.png',
+      '/images/products/neem-capsules.png',
+    ],
     price: 1100,
     image: '/images/products/neem-capsules.png',
     description: 'Neem leaf capsules known for their natural detoxifying and skin-supporting properties. Sustainably sourced and lab-tested.',
@@ -74,6 +105,12 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 45,
     price: 850,
+    images: [
+      '/images/products/herbal-tea-detox.png',
+      '/images/products/herbal-tea-detox.png',
+      '/images/products/herbal-tea-detox.png',
+      '/images/products/herbal-tea-detox.png',
+    ],
     image: '/images/products/herbal-tea-detox.png',
     description: 'A soothing blend of natural herbs designed to support gentle detoxification. Caffeine-free and naturally refreshing.',
   },
@@ -85,6 +122,12 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 45,
     price: 850,
+    images: [
+      '/images/products/lotustea.png',
+      '/images/products/lotustea.png',
+      '/images/products/lotustea.png',
+      '/images/products/lotustea.png',
+    ],
     image: '/images/products/lotustea.png',
     description: 'A soothing blend of natural herbs designed to support gentle detoxification. Caffeine-free and naturally refreshing.',
   },
@@ -96,7 +139,13 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 128,
     price: 1500,
-     image: '/images/products/moringa.png',
+    images: [
+      '/images/products/moringa.png',
+      '/images/products/moringa.png',
+      '/images/products/moringa.png',
+      '/images/products/moringa.png',
+    ],
+    image: '/images/products/moringa.png',
     description: 'Deora Moringa Capsules made from premium moringa leaves, supporting energy and immunity.',
   },
 
@@ -107,6 +156,12 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 96,
     price: 1800,
+    images: [
+      '/images/products/beetroot.png',
+      '/images/products/beetroot.png',
+      '/images/products/beetroot.png',
+      '/images/products/beetroot.png',
+    ],
     image: '/images/products/beetroot.png',
     description: 'Beetroot capsules to support healthy blood flow and natural energy levels.',
   },
@@ -118,6 +173,12 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 96,
     price: 1800,
+    images: [
+      '/images/products/carrot.png',
+      '/images/products/carrot.png',
+      '/images/products/carrot.png',
+      '/images/products/carrot.png',
+    ],
     image: '/images/products/carrot.png',
     description: 'Carrot capsules to support healthy vision and natural energy levels.',
   },
@@ -129,6 +190,12 @@ export const PRODUCTS: Product[] = [
     rating: 4,
     reviewCount: 110,
     price: 1000,
+    images: [
+      '/images/products/turmeric.png',
+      '/images/products/turmeric.png',
+      '/images/products/turmeric.png',
+      '/images/products/turmeric.png',
+    ],
     image: '/images/products/turmeric.png',
     description: 'High-curcumin turmeric capsules for natural anti-inflammatory support.',
   },
@@ -140,6 +207,12 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 64,
     price: 950,
+    images: [
+      '/images/products/heenbovitiya.png',
+      '/images/products/heenbovitiya.png',
+      '/images/products/heenbovitiya.png',
+      '/images/products/heenbovitiya.png',
+    ],
     image: '/images/products/heenbovitiya.png',
     description: 'Traditional Heenbovitiya leaves known for supporting liver health and natural detox.',
   },
@@ -151,6 +224,12 @@ export const PRODUCTS: Product[] = [
     rating: 4.5,
     reviewCount: 78,
     price: 850,
+    images: [
+      '/images/products/ginger-coriander-tea.png',
+      '/images/products/ginger-coriander-tea.png',
+      '/images/products/ginger-coriander-tea.png',
+      '/images/products/ginger-coriander-tea.png',
+    ],
     image: '/images/products/ginger-coriander-tea.png',
     description: 'A warming blend of ginger and coriander, naturally caffeine-free.',
   },

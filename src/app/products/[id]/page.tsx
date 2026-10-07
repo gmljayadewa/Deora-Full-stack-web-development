@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Star, ChevronRight } from 'lucide-react';
 import { PRODUCTS, getProductById } from '../../../lib/products';
 import ProductCard from '../../../components/ProductCard';
 import ProductQuantitySelector from '../../../components/ProductQuantitySelector';
+import ProductImageGallery from '../../../components/ProductImageGallery';
 
 function formatPrice(value: number): string {
   return `Rs. ${value.toLocaleString('en-LK')}.00`;
@@ -22,9 +22,15 @@ export default async function ProductDetailsPage({ params }: { params: Params })
 
   const relatedProducts = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 4);
 
+  const galleryImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : product.image
+      ? [product.image]
+      : [];
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--color-muted)' }}>
         <Link href="/">Home</Link>
         <ChevronRight size={14} />
@@ -33,25 +39,9 @@ export default async function ProductDetailsPage({ params }: { params: Params })
         <span style={{ color: 'var(--color-ink)' }}>{product.name}</span>
       </div>
 
-      {/* Product main section */}
       <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-2">
-        {/* Image */}
-        <div
-          className="relative aspect-square w-full overflow-hidden rounded-lg"
-          style={{ background: 'var(--color-surface)' }}
-        >
-          {product.image ? (
-            <Image src={product.image} alt={product.name} fill className="object-cover" priority />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <span className="text-sm" style={{ color: 'var(--color-muted)' }}>
-                Image
-              </span>
-            </div>
-          )}
-        </div>
+        <ProductImageGallery images={galleryImages} productName={product.name} />
 
-        {/* Details */}
         <div>
           {product.category && (
             <span
@@ -89,7 +79,6 @@ export default async function ProductDetailsPage({ params }: { params: Params })
         </div>
       </div>
 
-      {/* Related products */}
       {relatedProducts.length > 0 && (
         <div className="mt-16">
           <h2 className="font-display text-xl font-bold" style={{ color: 'var(--color-ink)' }}>

@@ -44,14 +44,14 @@ export default function Navbar() {
 
       {/* Main navbar */}
       <div className="border-b" style={{ borderColor: 'var(--color-line)' }}>
-        <div className="mx-auto flex max-w-6xl items-center gap-8 py-5 pl-3 pr-6">
+        <div className="mx-auto flex max-w-6xl items-center gap-8 py-1 pl-3 pr-6">
           {/* Logo */}
           <Link href="/" className="flex shrink-0 items-center" onClick={() => setOpen(false)}>
             <Image
               src="/deora-logo.jpeg"
               alt="Deora"
-              width={170}
-              height={48}
+              width={115}
+              height={30}
               priority
               style={{ mixBlendMode: 'multiply' }}
             />
@@ -72,7 +72,7 @@ export default function Navbar() {
                       fontWeight: isActive ? 700 : 500,
                     }}
                   >
-                    <span className="transition-colors duration-200 group-hover:text-[var(--color-brand)]">
+                    <span className="transition-colors duration-200 group-hover:text-(--color-brand)">
                       {link.label}
                     </span>
                     <span
@@ -87,7 +87,7 @@ export default function Navbar() {
             {/* Search bar - flex-1 grows to fill all remaining space between nav links and icons */}
             <form
               onSubmit={handleSearch}
-              className="flex flex-1 items-center overflow-hidden rounded-full border px-5 py-2.5"
+             className="flex flex-1 items-center overflow-hidden rounded-full border px-5 py-2"
               style={{ borderColor: 'var(--color-line)' }}
             >
               <input
@@ -95,7 +95,7 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="w-full text-base outline-none placeholder:text-[var(--color-muted)]"
+                className="w-full text-base outline-none placeholder:text-(--color-muted)"
               />
               <button type="submit" aria-label="Search">
                 <Search size={18} style={{ color: 'var(--color-muted)' }} />
@@ -182,7 +182,7 @@ export default function Navbar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products..."
-              className="w-full text-sm outline-none placeholder:text-[var(--color-muted)]"
+              className="w-full text-sm outline-none placeholder:text-(--color-muted)"
             />
             <button type="submit" aria-label="Search">
               <Search size={16} style={{ color: 'var(--color-muted)' }} />

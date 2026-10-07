@@ -10,10 +10,10 @@ type Category = {
 };
 
 const CATEGORIES: Category[] = [
-  { slug: 'herbal-capsules', label: 'Herbal Capsules', image: '/categories/herbal-capsules.jpg', category: 'Wellness' },
-  { slug: 'herbal-tea-bags', label: 'Herbal Tea Bags', image: '/categories/herbal-tea-bags.jpg', category: 'Herbal Tea' },
-  { slug: 'nutrition-products', label: 'Nutrition Products', image: '/categories/nutrition-products.jpg', category: 'Nutrition' },
-  { slug: 'spices', label: 'Spices', image: '/categories/spices.jpg', category: 'Kitchen Essentials' },
+  { slug: 'herbal-capsules', label: 'Herbal Capsules', image: '/images/category/category-wellness.png', category: 'Wellness' },
+  { slug: 'herbal-tea-bags', label: 'Herbal Tea Bags', image: '/images/category/category-herbal-tea.png', category: 'Herbal Tea' },
+  { slug: 'nutrition-products', label: 'Nutrition Products', image: '/images/category/category-nutrition.png', category: 'Nutrition' },
+  { slug: 'spices', label: 'Spices', image: '/images/category/category-kitchen.png', category: 'Kitchen Essentials' },
 ];
 
 export default function ShopByCategory() {
