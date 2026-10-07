@@ -2,8 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 function formatPrice(value: number): string {
@@ -11,9 +10,8 @@ function formatPrice(value: number): string {
 }
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice } = useCart();
   const router = useRouter();
-  const [orderPlaced, setOrderPlaced] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -29,39 +27,89 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Week 5 scope: frontend-only checkout UI. Real order creation +
-    // payment gateway (PayHere) integration happens in Week 7, once the
-    // backend/database is set up.
-    setOrderPlaced(true);
-    clearCart();
+    if (loading) return; // guard against double-click
+    setLoading(true);
+
+    try {
+      // Sending the order request to the backend
+      const res = await fetch('/api/payment/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          shippingAddress: `${formData.address},${formData.city},${formData.postalCode},${formData.province}`,
+        }),
+      });
+
+      // Handling Unauthorized / Failed Responses
+      if (res.status === 401) {
+        alert('Please log in to continue.');
+        router.push('/login');
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to create order');
+
+      // Parsing the response
+      const data = await res.json();
+
+      if (!data.hash || !data.orderId || !data.merchantId) {
+        throw new Error('Invalid response from server');
+      }
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://sandbox.payhere.lk/pay/checkout';
+
+      // Splitting the full name into first and last name for the payment gateway
+      const [firstName, ...rest] = formData.fullName.trim().split(/\s+/);
+      const lastName = rest.join(' ') || firstName;
+
+      // Assembling the fields object
+      const fields: Record<string, string> = {
+        merchant_id: data.merchantId,
+        return_url: `${window.location.origin}/checkout/success`,
+        cancel_url: `${window.location.origin}/checkout/cancel`,
+        notify_url: `${window.location.origin}/api/payment/notify`,
+        order_id: data.orderId,
+        items: items.map(({ product }) => product.name).join(','),
+        currency: data.currency,
+        amount: data.amount,
+        first_name: firstName,
+        last_name: lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        country: 'Sri Lanka',
+        hash: data.hash,
+      };
+
+      // Injecting fields as hidden inputs
+      Object.entries(fields).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      // No setLoading(false) here on purpose — the page is navigating away to PayHere
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Something went wrong. Please try again.');
+      setLoading(false); // only reset on error — on success, page navigates away anyway
+    }
   };
 
-  if (items.length === 0 && !orderPlaced) {
+  if (items.length === 0) {
     router.push('/shop');
     return null;
-  }
-
-  if (orderPlaced) {
-    return (
-      <div className="mx-auto max-w-6xl px-6 py-20 text-center">
-        <CheckCircle2 size={48} className="mx-auto" style={{ color: 'var(--color-brand)' }} />
-        <h1 className="mt-4 font-display text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>
-          Order Placed Successfully!
-        </h1>
-        <p className="mt-2 text-sm" style={{ color: 'var(--color-muted)' }}>
-          Thank you for your order. We&apos;ll send a confirmation to your email shortly.
-        </p>
-        <Link
-          href="/shop"
-          className="mt-6 inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white"
-          style={{ background: 'var(--color-brand)' }}
-        >
-          Continue Shopping <ArrowRight size={16} />
-        </Link>
-      </div>
-    );
   }
 
   return (
@@ -214,10 +262,11 @@ export default function CheckoutPage() {
 
           <button
             type="submit"
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-md py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+            disabled={loading}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-md py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ background: 'var(--color-brand)' }}
           >
-            Place Order <ArrowRight size={16} />
+            {loading ? 'Processing...' : 'Place Order'} <ArrowRight size={16} />
           </button>
         </div>
       </form>
