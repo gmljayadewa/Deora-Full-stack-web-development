@@ -1,48 +1,28 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
+import { BLOG_POSTS } from '../lib/blog-posts';
 
-type Post = {
-  slug: string;
-  date: string;
-  title: string;
-  excerpt: string;
-  image: string;
-};
+function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
 
-const POSTS: Post[] = [
-  {
-    slug: '10-health-benefits-of-moringa',
-    date: 'May 10, 2025',
-    title: '10 Health Benefits of Moringa',
-    excerpt: 'Discover the amazing health benefits of moringa and why it is called a superfood.',
-    image: '/images/blogs/blog-moringa.png',
-  },
-  {
-    slug: 'why-herbal-tea-is-good-for-you',
-    date: 'May 05, 2025',
-    title: 'Why Herbal Tea is Good for You?',
-    excerpt: 'Herbal teas are natural, caffeine-free and packed with goodness.',
-    image: '/images/blogs/blog-herbal-tea.png',
-  },
-  {
-    slug: 'the-power-of-natural-spices',
-    date: 'Apr 28, 2025',
-    title: 'The Power of Natural Spices',
-    excerpt: 'Natural spices not only enhance flavor but also support overall wellness.',
-    image: '/images/blogs/blog-spices.png',
-  },
-];
+export default function BlogsSection() {
+  const posts = BLOG_POSTS.slice(0, 3);
 
-export default function BlogsEvents() {
   return (
-    <section className="mx-auto max-w-6xl px-6 pb-14">
+    <section className="mx-auto max-w-6xl px-6 py-14">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-xl font-bold" style={{ color: 'var(--color-ink)' }}>
-          Blogs & Events
+          From Our Blog
         </h2>
         <Link
-          href="/blogs"
+          href="/blog"
           className="flex items-center gap-1 text-sm font-medium"
           style={{ color: 'var(--color-brand)' }}
         >
@@ -50,32 +30,52 @@ export default function BlogsEvents() {
         </Link>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {POSTS.map((post) => (
+      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post) => (
           <Link
             key={post.slug}
-            href={`/blogs/${post.slug}`}
-            className="group rounded-lg border p-3 transition-transform hover:-translate-y-1"
+            href={`/blog/${post.slug}`}
+            className="group flex flex-col overflow-hidden rounded-lg border"
             style={{ borderColor: 'var(--color-line)' }}
           >
-            <div className="relative h-40 w-full overflow-hidden rounded-md" style={{ background: 'var(--color-surface)' }}>
-              <Image src={post.image} alt={post.title} fill className="object-cover" />
-            </div>
-            <span className="mt-3 block text-xs" style={{ color: 'var(--color-muted)' }}>
-              {post.date}
-            </span>
-            <h3 className="mt-1 font-display text-base font-semibold" style={{ color: 'var(--color-ink)' }}>
-              {post.title}
-            </h3>
-            <p className="mt-2 line-clamp-2 text-sm" style={{ color: 'var(--color-muted)' }}>
-              {post.excerpt}
-            </p>
-            <span
-              className="mt-3 inline-flex items-center gap-1 text-sm font-medium"
-              style={{ color: 'var(--color-brand)' }}
+            <div
+              className="relative aspect-[4/3] w-full"
+              style={{ background: 'var(--color-surface)' }}
             >
-              Read More <ArrowRight size={14} />
-            </span>
+              {post.image && (
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-contain p-4"
+                />
+              )}
+            </div>
+
+            <div className="flex flex-1 flex-col p-4">
+              <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
+                {formatDate(post.date)}
+              </span>
+              <h3
+                className="mt-2 line-clamp-2 text-base font-semibold"
+                style={{ color: 'var(--color-ink)' }}
+              >
+                {post.title}
+              </h3>
+              <p
+                className="mt-2 line-clamp-2 text-sm"
+                style={{ color: 'var(--color-muted)' }}
+              >
+                {post.excerpt}
+              </p>
+              <span
+                className="mt-4 flex items-center gap-1 text-sm font-medium transition-transform group-hover:translate-x-1"
+                style={{ color: 'var(--color-brand)' }}
+              >
+                Read More <ArrowRight size={14} />
+              </span>
+            </div>
           </Link>
         ))}
       </div>

@@ -1,11 +1,9 @@
-import ChatWidget from  "@/components/ChatWidget";
+import ChatWidget from "@/components/ChatWidget";
 
-
-export default function ChatTestPage(){
-    return(
-        <main className = "px-4 py-6 sm:px-20">
-            <h1 className="text-2xl font-bold mb-4">Chat Test</h1>
-            <ChatWidget/>
-       </main>
-    );
+export default function ChatTestPage() {
+  return (
+    <main className="px-6 py-18 sm:py-20">
+      <ChatWidget />
+    </main>
+  );
 }

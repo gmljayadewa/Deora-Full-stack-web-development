@@ -6,14 +6,14 @@ type Category = {
   slug: string;
   label: string;
   image: string;
-  category: string; // must match a category value in lib/products.ts
+  category: string; // must match a category name in the database
 };
 
 const CATEGORIES: Category[] = [
-  { slug: 'herbal-capsules', label: 'Herbal Capsules', image: '/images/category/category-wellness.png', category: 'Wellness' },
-  { slug: 'herbal-tea-bags', label: 'Herbal Tea Bags', image: '/images/category/category-herbal-tea.png', category: 'Herbal Tea' },
+  { slug: 'herbal-capsules', label: 'Herbal Capsules', image: '/images/category/category-wellness.png', category: 'Capsules' },
+  { slug: 'herbal-tea-bags', label: 'Herbal Tea Bags', image: '/images/category/category-herbal-tea.png', category: 'Tea' },
   { slug: 'nutrition-products', label: 'Nutrition Products', image: '/images/category/category-nutrition.png', category: 'Nutrition' },
-  { slug: 'spices', label: 'Spices', image: '/images/category/category-kitchen.png', category: 'Kitchen Essentials' },
+  { slug: 'spices', label: 'Spices', image: '/images/category/category-kitchen.png', category: 'Spices' },
 ];
 
 export default function ShopByCategory() {

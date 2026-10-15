@@ -8,7 +8,10 @@ import type { Product } from '../lib/products';
 import { useCart } from '../context/CartContext';
 
 function formatPrice(value: number): string {
-  return `Rs. ${value.toLocaleString('en-LK')}.00`;
+  return `Rs. ${value.toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -28,11 +31,17 @@ export default function ProductCard({ product }: { product: Product }) {
     >
       <div className="relative">
         <div
-          className="relative flex h-32 w-full items-center justify-center overflow-hidden rounded-md"
+          className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md"
           style={{ background: 'var(--color-surface)' }}
         >
           {product.image ? (
-            <Image src={product.image} alt={product.name} fill className="object-cover" />
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-contain"
+            />
           ) : (
             <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
               Image
@@ -64,12 +73,14 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.name}
       </Link>
 
-      <div className="mt-1 flex items-center gap-1">
-        <Star size={12} fill="var(--color-secondary)" style={{ color: 'var(--color-secondary)' }} />
-        <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
-          {product.rating} ({product.reviewCount})
-        </span>
-      </div>
+      {product.rating ? (
+        <div className="mt-1 flex items-center gap-1">
+          <Star size={12} fill="var(--color-secondary)" style={{ color: 'var(--color-secondary)' }} />
+          <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
+            {product.rating} ({product.reviewCount ?? 0})
+          </span>
+        </div>
+      ) : null}
 
       <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
         {formatPrice(product.price)}

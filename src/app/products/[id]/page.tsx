@@ -1,26 +1,31 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Star, ChevronRight } from 'lucide-react';
-import { PRODUCTS, getProductById } from '../../../lib/products';
+import { getProductByIdFromDb, getRelatedProducts } from '../../../lib/product-queries';
 import ProductCard from '../../../components/ProductCard';
 import ProductQuantitySelector from '../../../components/ProductQuantitySelector';
 import ProductImageGallery from '../../../components/ProductImageGallery';
 
+export const dynamic = 'force-dynamic';
+
 function formatPrice(value: number): string {
-  return `Rs. ${value.toLocaleString('en-LK')}.00`;
+  return `Rs. ${value.toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 type Params = Promise<{ id: string }>;
 
 export default async function ProductDetailsPage({ params }: { params: Params }) {
   const { id } = await params;
-  const product = getProductById(id);
+  const product = await getProductByIdFromDb(id);
 
   if (!product) {
     notFound();
   }
 
-  const relatedProducts = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 4);
+  const relatedProducts = await getRelatedProducts(product.id, 4);
 
   const galleryImages =
     product.images && product.images.length > 0
@@ -56,12 +61,14 @@ export default async function ProductDetailsPage({ params }: { params: Params })
             {product.name}
           </h1>
 
-          <div className="mt-2 flex items-center gap-1">
-            <Star size={14} fill="var(--color-secondary)" style={{ color: 'var(--color-secondary)' }} />
-            <span className="text-sm" style={{ color: 'var(--color-muted)' }}>
-              {product.rating} ({product.reviewCount} reviews)
-            </span>
-          </div>
+          {product.rating ? (
+            <div className="mt-2 flex items-center gap-1">
+              <Star size={14} fill="var(--color-secondary)" style={{ color: 'var(--color-secondary)' }} />
+              <span className="text-sm" style={{ color: 'var(--color-muted)' }}>
+                {product.rating} ({product.reviewCount ?? 0} reviews)
+              </span>
+            </div>
+          ) : null}
 
           <p className="mt-4 text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>
             {formatPrice(product.price)}
