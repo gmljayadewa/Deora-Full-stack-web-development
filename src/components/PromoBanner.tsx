@@ -37,7 +37,7 @@ export default function PromoBanner() {
         </div>
 
         <div className="relative h-56 w-full overflow-hidden rounded-xl sm:h-72">
-          <Image src="/../promo.png" alt="lotus herbal tea" fill className="object-cover" />
+          <Image src="/images/promo.jpg" alt="lotus herbal tea" fill className="object-cover" />
         </div>
       </div>
     </section>

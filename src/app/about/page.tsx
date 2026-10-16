@@ -29,7 +29,7 @@ const STEPS = [
 ];
 
 const RANGES = [
-  { label: 'Herbal Capsules', category: 'Capsules', image: '/images/category/category-wellness.png' },
+  { label: 'Herbal Capsules', category: 'Capsules', image: '/images/category/category-wellness.jpg' },
   { label: 'Herbal Tea', category: 'Tea', image: '/images/category/category-herbal-tea.png' },
   { label: 'Nutrition', category: 'Nutrition', image: '/images/category/category-nutrition.png' },
   { label: 'Spices', category: 'Spices', image: '/images/category/category-kitchen.png' },

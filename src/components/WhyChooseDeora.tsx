@@ -25,7 +25,7 @@ export default function WhyChooseDeora() {
           style={{ background: 'var(--color-brand-dark)' }}
         >
           <div className="absolute inset-0 opacity-30">
-            <Image src="/images/wellness-bundle.png" alt="" fill className="object-cover" />
+            <Image src="/images/wellness-bundle.jpg" alt="" fill className="object-cover" />
           </div>
           <div className="relative">
             <span

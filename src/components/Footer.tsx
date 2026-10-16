@@ -16,7 +16,7 @@ const Footer = () => {
         <div className="lg:col-span-2">
           <div className="mb-6">
             <Image
-              src="/../footer-logo.png"
+              src="/footer-logo.png"
               alt="DEORA Logo"
               width={120}
               height={40}

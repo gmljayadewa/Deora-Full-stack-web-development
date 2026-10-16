@@ -13,7 +13,7 @@ const TODO = "TODO: confirm with client";
 const capsule = (name: string, file: string, herb: string): SeedProduct => ({
   name: `${name} Capsules`,
   category: "Capsules",
-  image: `/images/products/capsules/${file}.png`,
+  image: `/images/products/capsules/${file}.jpg`,
   description: `${herb} capsules, traditionally used as part of a daily wellness routine.`,
   ingredients: TODO,
   usage: TODO,
@@ -23,7 +23,7 @@ const capsule = (name: string, file: string, herb: string): SeedProduct => ({
 const tea = (name: string, file: string, desc: string): SeedProduct => ({
   name,
   category: "Tea",
-  image: `/images/products/tea/${file}.png`,
+  image: `/images/products/tea/${file}.jpg`,
   description: desc,
   ingredients: TODO,
   usage: TODO,
@@ -33,7 +33,7 @@ const tea = (name: string, file: string, desc: string): SeedProduct => ({
 const spice = (name: string, file: string): SeedProduct => ({
   name,
   category: "Spices",
-  image: `/images/products/spices/${file}.png`,
+  image: `/images/products/spices/${file}.jpg`,
   description: `${name}, a Sri Lankan spice blend for everyday cooking.`,
   ingredients: TODO,
   usage: TODO,
@@ -43,7 +43,7 @@ const spice = (name: string, file: string): SeedProduct => ({
 const nutrition = (name: string, file: string): SeedProduct => ({
   name,
   category: "Nutrition",
-  image: `/images/products/nutrition/${file}.png`,
+  image: `/images/products/nutrition/${file}.jpg`,
   description: `${name}, a traditional Sri Lankan nutrition product.`,
   ingredients: TODO,
   usage: TODO,
