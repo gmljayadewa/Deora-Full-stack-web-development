@@ -18,11 +18,10 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "how-to-brew-herbal-tea",
     title: "How to Brew a Good Cup of Herbal Tea",
-    excerpt:
-      "A few simple steps to get the best flavour from your herbal tea.Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets. It has survived not only many decades, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised thanks to these sheets and more recently with desktop publishing software like Aldus PageMaker and Microsoft Word including versions of Lorem Ipsum.",
+    excerpt: "A few simple steps to get the best flavour from your herbal tea.",
     date: "2026-10-14",
     readTime: "2 min read",
-    image: "/images/products/tea/amla.jpg",
+    image: "/images/blogs/blog-herbal-tea.png",
     sections: [
       {
         paragraphs: [
@@ -54,7 +53,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "Keep your capsules, teas and powders fresh with these easy storage tips.",
     date: "2026-10-14",
     readTime: "2 min read",
-    image: "/images/products/capsules/gotukola.jpg",
+    image: "/images/blogs/blog-moringa.png",
     sections: [
       {
         paragraphs: [
@@ -79,7 +78,7 @@ export const BLOG_POSTS: BlogPost[] = [
     excerpt: "A simple guide to choosing the right curry powder for your meal.",
     date: "2026-10-14",
     readTime: "3 min read",
-    image: "/images/products/spices/roasted-curry-powder.jpg",
+    image: "/images/blogs/blog-spices.png",
     sections: [
       {
         paragraphs: [
