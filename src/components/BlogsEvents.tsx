@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 import { BLOG_POSTS } from '../lib/blog-posts';
 
@@ -39,16 +38,14 @@ export default function BlogsSection() {
             style={{ borderColor: 'var(--color-line)' }}
           >
             <div
-              className="relative aspect-[4/3] w-full"
+              className="relative aspect-[4/3] w-full overflow-hidden p-4"
               style={{ background: 'var(--color-surface)' }}
             >
               {post.image && (
-                <Image
+                <img
                   src={post.image}
                   alt={post.title}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-contain p-4"
+                  className="h-full w-full object-contain"
                 />
               )}
             </div>
