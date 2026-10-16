@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import type { Product } from '../lib/products';
 
 export type CartItem = {
@@ -10,6 +16,7 @@ export type CartItem = {
 
 type CartContextType = {
   items: CartItem[];
+  ready: boolean; // true after the saved cart has been loaded from the browser
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -18,26 +25,60 @@ type CartContextType = {
   totalPrice: number;
 };
 
+// New key, so old carts with the old product ids are ignored
+const STORAGE_KEY = 'deora-cart-v2';
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [ready, setReady] = useState(false);
+
+  // Load the saved cart once, in the browser
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setItems(
+            parsed.filter(
+              (i) =>
+                i &&
+                i.product &&
+                typeof i.product.id === 'string' &&
+                Number.isInteger(i.quantity) &&
+                i.quantity > 0,
+            ),
+          );
+        }
+      }
+    } catch {
+      // ignore broken saved data
+    }
+    setReady(true);
+  }, []);
+
+  // Save the cart whenever it changes (only after the first load)
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // storage can be full or blocked
+    }
+  }, [items, ready]);
 
   const addItem = (product: Product, quantity = 1) => {
     setItems((prev) => {
-      // Check if the item is already in the cart
       const existing = prev.find((item) => item.product.id === product.id);
-
       if (existing) {
-        // If it exists, update the quantity immutably
         return prev.map((item) =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
-            : item
+            : item,
         );
       }
-
-      // If it's a new item, add it to the array
       return [...prev, { product, quantity }];
     });
   };
@@ -53,19 +94,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     setItems((prev) =>
       prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
+        item.product.id === productId ? { ...item, quantity } : item,
+      ),
     );
   };
 
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    setItems([]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const totalPrice = items.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0,
+  );
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}
+      value={{
+        items,
+        ready,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+      }}
     >
       {children}
     </CartContext.Provider>

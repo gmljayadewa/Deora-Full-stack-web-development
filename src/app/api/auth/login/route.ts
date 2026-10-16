@@ -16,13 +16,15 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 export async function POST(request: Request) {
   try {
     // received the request data from the client
-    const { email, password } = await request.json();
+    const { email: rawEmail, password } = await request.json();
+    const email =
+      typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
 
     // validation for the request data
     if (!email || !password) {
       return NextResponse.json(
         { message: "email and password are required!" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -35,20 +37,20 @@ export async function POST(request: Request) {
     if (!existingUser) {
       return NextResponse.json(
         { message: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // compare the provided password with the hashed password stored in the database
     const isPasswordValid = await bcrypt.compare(
       password,
-      existingUser.password
+      existingUser.password,
     );
 
     if (!isPasswordValid) {
       return NextResponse.json(
         { message: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -64,15 +66,18 @@ export async function POST(request: Request) {
         role: existingUser.role,
       },
       JWT_SECRET,
-      { expiresIn: "7d" } // "why expiry?" — token එක permanent නම්, කවදාහරි
+      { expiresIn: "7d" }, // "why expiry?" — token එක permanent නම්, කවදාහරි
       // leak උනොත් (browser history, logs), permanent access එකක් ලැබෙනවා.
       // Expiry එකකින් ඒ risk window එක limit කරනවා.
     );
 
     // successful login, return a successful response
     const response = NextResponse.json(
-      { message: "Login successfully", user: { id: existingUser.id, role: existingUser.role } },
-      { status: 200 }
+      {
+        message: "Login successfully",
+        user: { id: existingUser.id, role: existingUser.role },
+      },
+      { status: 200 },
     );
 
     // ==============================
@@ -99,7 +104,7 @@ export async function POST(request: Request) {
     console.error("login error:", error);
     return NextResponse.json(
       { message: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

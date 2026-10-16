@@ -8,7 +8,7 @@
     },
     {
       "question": "How much is delivery?",
-      "answer": "Delivery costs Rs. 350 per order. It is free for orders over Rs. 5000.",
+      "answer": "Delivery costs Rs. 400 per order. ",
       "dependsOnStoreInfo": true
     },
     {

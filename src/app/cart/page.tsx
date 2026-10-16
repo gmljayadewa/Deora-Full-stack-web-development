@@ -4,13 +4,20 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Minus, Plus, Trash2, ArrowRight, ShoppingCart } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { DELIVERY_FEE } from '../../lib/shipping';
 
 function formatPrice(value: number): string {
-  return `Rs. ${value.toLocaleString('en-LK')}.00`;
+  return `Rs. ${value.toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, totalPrice } = useCart();
+  const { items, removeItem, updateQuantity, totalPrice, ready } = useCart();
+
+  // Wait until the saved cart is loaded, so "empty cart" does not flash
+  if (!ready) return null;
 
   if (items.length === 0) {
     return (
@@ -48,7 +55,7 @@ export default function CartPage() {
           {items.map(({ product, quantity }) => (
             <div
               key={product.id}
-              className="flex items-center gap-4 rounded-lg border p-4"
+              className="flex flex-wrap items-center gap-4 rounded-lg border p-4 sm:flex-nowrap"
               style={{ borderColor: 'var(--color-line)' }}
             >
               {/* Image */}
@@ -57,7 +64,13 @@ export default function CartPage() {
                 style={{ background: 'var(--color-surface)' }}
               >
                 {product.image ? (
-                  <Image src={product.image} alt={product.name} fill className="object-cover" />
+                  <Image
+                    src={product.image}
+                    alt={product.name}
+                    fill
+                    sizes="80px"
+                    className="object-contain"
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <span className="text-xs" style={{ color: 'var(--color-muted)' }}>
@@ -68,10 +81,10 @@ export default function CartPage() {
               </div>
 
               {/* Name + price */}
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/products/${product.id}`}
-                  className="text-sm font-medium"
+                  className="line-clamp-2 text-sm font-medium"
                   style={{ color: 'var(--color-ink)' }}
                 >
                   {product.name}
@@ -94,7 +107,10 @@ export default function CartPage() {
                 >
                   <Minus size={14} />
                 </button>
-                <span className="flex h-8 w-10 items-center justify-center text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+                <span
+                  className="flex h-8 w-10 items-center justify-center text-sm font-medium"
+                  style={{ color: 'var(--color-ink)' }}
+                >
                   {quantity}
                 </span>
                 <button
@@ -108,7 +124,10 @@ export default function CartPage() {
               </div>
 
               {/* Line total */}
-              <p className="w-24 text-right text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
+              <p
+                className="w-28 text-right text-sm font-semibold"
+                style={{ color: 'var(--color-ink)' }}
+              >
                 {formatPrice(product.price * quantity)}
               </p>
 
@@ -125,10 +144,7 @@ export default function CartPage() {
         </div>
 
         {/* Order summary */}
-        <div
-          className="h-fit rounded-lg border p-6"
-          style={{ borderColor: 'var(--color-line)' }}
-        >
+        <div className="h-fit rounded-lg border p-6" style={{ borderColor: 'var(--color-line)' }}>
           <h2 className="font-display text-lg font-bold" style={{ color: 'var(--color-ink)' }}>
             Order Summary
           </h2>
@@ -138,14 +154,14 @@ export default function CartPage() {
           </div>
           <div className="mt-2 flex items-center justify-between text-sm">
             <span style={{ color: 'var(--color-muted)' }}>Delivery</span>
-            <span style={{ color: 'var(--color-ink)' }}>400</span>
+            <span style={{ color: 'var(--color-ink)' }}>{formatPrice(DELIVERY_FEE)}</span>
           </div>
           <div
             className="mt-4 flex items-center justify-between border-t pt-4 text-base font-bold"
             style={{ borderColor: 'var(--color-line)', color: 'var(--color-ink)' }}
           >
             <span>Total</span>
-            <span>{formatPrice(totalPrice)}</span>
+            <span>{formatPrice(totalPrice + DELIVERY_FEE)}</span>
           </div>
           <Link
             href="/checkout"
@@ -153,6 +169,13 @@ export default function CartPage() {
             style={{ background: 'var(--color-brand)' }}
           >
             Proceed to Checkout <ArrowRight size={16} />
+          </Link>
+          <Link
+            href="/shop"
+            className="mt-3 block text-center text-sm font-medium underline"
+            style={{ color: 'var(--color-brand)' }}
+          >
+            Continue Shopping
           </Link>
         </div>
       </div>

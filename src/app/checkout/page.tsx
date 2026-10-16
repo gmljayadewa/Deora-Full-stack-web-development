@@ -1,16 +1,20 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { DELIVERY_FEE } from '../../lib/shipping';
 
 function formatPrice(value: number): string {
-  return `Rs. ${value.toLocaleString('en-LK')}.00`;
+  return `Rs. ${value.toLocaleString('en-LK', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export default function CheckoutPage() {
-  const { items, totalPrice } = useCart();
+  const { items, totalPrice, ready } = useCart();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -29,6 +33,10 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (ready && items.length === 0) router.push('/shop');
+  }, [ready, items.length, router]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return; // guard against double-click
@@ -42,16 +50,32 @@ export default function CheckoutPage() {
         credentials: 'include',
         body: JSON.stringify({
           shippingAddress: `${formData.address},${formData.city},${formData.postalCode},${formData.province}`,
+          items: items.map(({ product, quantity }) => ({
+            productId: product.id,
+            quantity,
+          })),
         }),
       });
 
-      // Handling Unauthorized / Failed Responses
+      // Not logged in: go to login, then come back here
       if (res.status === 401) {
+        setLoading(false);
         alert('Please log in to continue.');
-        router.push('/login');
+        router.push('/login?next=/checkout');
         return;
       }
-      if (!res.ok) throw new Error('Failed to create order');
+
+      if (!res.ok) {
+        let message = 'Failed to create order';
+        try {
+          const err = await res.json();
+          if (err?.message) message = err.message;
+        } catch {
+          // response was not JSON
+        }
+        console.error('initiate failed:', res.status, message);
+        throw new Error(message);
+      }
 
       // Parsing the response
       const data = await res.json();
@@ -59,6 +83,10 @@ export default function CheckoutPage() {
       if (!data.hash || !data.orderId || !data.merchantId) {
         throw new Error('Invalid response from server');
       }
+
+      // PayHere must reach this URL from the internet (ngrok or your live site).
+      // Set NEXT_PUBLIC_APP_URL in .env when testing the notify webhook.
+      const publicUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
 
       const form = document.createElement('form');
       form.method = 'POST';
@@ -71,9 +99,9 @@ export default function CheckoutPage() {
       // Assembling the fields object
       const fields: Record<string, string> = {
         merchant_id: data.merchantId,
-        return_url: `${window.location.origin}/checkout/success`,
+        return_url: `${window.location.origin}/checkout/success?order_id=${data.orderId}`,
         cancel_url: `${window.location.origin}/checkout/cancel`,
-        notify_url: `${window.location.origin}/api/payment/notify`,
+        notify_url: `${publicUrl}/api/payment/notify`,
         order_id: data.orderId,
         items: items.map(({ product }) => product.name).join(','),
         currency: data.currency,
@@ -99,18 +127,20 @@ export default function CheckoutPage() {
 
       document.body.appendChild(form);
       form.submit();
-      // No setLoading(false) here on purpose — the page is navigating away to PayHere
+      // No setLoading(false) here on purpose: the page is navigating away to PayHere
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Something went wrong. Please try again.');
-      setLoading(false); // only reset on error — on success, page navigates away anyway
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong. Please try again.',
+      );
+      setLoading(false);
     }
   };
 
-  if (items.length === 0) {
-    router.push('/shop');
-    return null;
-  }
+  // Wait for the saved cart to load; the effect above redirects when it is empty
+  if (!ready || items.length === 0) return null;
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -249,15 +279,14 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mt-4 flex items-center justify-between border-t pt-4 text-sm" style={{ borderColor: 'var(--color-line)' }}>
-            <span style={{ color: 'var(--color-muted)' }}>Delivery</span>
-            <span style={{ color: 'var(--color-ink)' }}>Free</span>
+                        <span style={{ color: 'var(--color-ink)' }}>{formatPrice(DELIVERY_FEE)}</span>
           </div>
           <div
             className="mt-2 flex items-center justify-between border-t pt-4 text-base font-bold"
             style={{ borderColor: 'var(--color-line)', color: 'var(--color-ink)' }}
           >
             <span>Total</span>
-            <span>{formatPrice(totalPrice)}</span>
+             <span>{formatPrice(totalPrice + DELIVERY_FEE)}</span>
           </div>
 
           <button

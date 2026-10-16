@@ -5,12 +5,11 @@
     "name": "Deora",
     "sells": "Herbal capsules, herbal teas, herbal powders, spices and curry powders, cookies, porridge mixes and pickles"
   },
-  "delivery": {
-    "_placeholder": true,
+    "delivery": {
+    "_placeholder": false,
     "areas": "Island-wide delivery within Sri Lanka",
     "time": "2-4 working days after the order is confirmed",
-    "fee": "Rs. 350 per order",
-    "freeDeliveryOver": "Rs. 5000"
+    "fee": "Rs. 400 per order"
   },
   "payment": {
     "_placeholder": true,
