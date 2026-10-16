@@ -33,7 +33,7 @@ export default function BlogsSection() {
         {posts.map((post) => (
           <Link
             key={post.slug}
-            href={`/blog/${post.slug}`}
+            href={`/blogs/${post.slug}`}
             className="group flex flex-col overflow-hidden rounded-lg border"
             style={{ borderColor: 'var(--color-line)' }}
           >
