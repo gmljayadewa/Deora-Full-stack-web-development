@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma"; // ⚠️ path එක ඔයාගේ custom generator output එකට match කරන්ඩ
+import { Prisma } from "@prisma/client";
 
 // "why accept 'tx' as a parameter?" — මේ function එක $transaction block එකක්
 // ඇතුළේ call වෙන්ඩ ඕන (order creation එකේම atomic transaction එකේම කොටසක්
@@ -9,7 +9,7 @@ export async function decrementStock(
   tx: Prisma.TransactionClient,
   productId: string,
   quantity: number,
-  productName: string
+  productName: string,
 ) {
   const result = await tx.inventory.updateMany({
     where: {
