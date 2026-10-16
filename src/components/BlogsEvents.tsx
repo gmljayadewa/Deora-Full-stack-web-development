@@ -21,7 +21,7 @@ export default function BlogsSection() {
           From Our Blog
         </h2>
         <Link
-          href="/blog"
+          href="/blogs"
           className="flex items-center gap-1 text-sm font-medium"
           style={{ color: 'var(--color-brand)' }}
         >
