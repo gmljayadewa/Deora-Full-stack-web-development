@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
 
 type Category = {
@@ -40,7 +39,7 @@ export default function ShopByCategory() {
             className="group block"
           >
             <div className="relative aspect-square w-full overflow-hidden rounded-lg" style={{ background: 'var(--color-surface)' }}>
-              <Image src={cat.image} alt={cat.label} fill className="object-cover" />
+              <img src={cat.image} alt={cat.label} className="h-full w-full object-cover" />
             </div>
             <div className="mt-3 flex items-center justify-between">
               <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
