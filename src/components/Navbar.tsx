@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Search, User, Heart, ShoppingCart, Menu, X } from 'lucide-react';
 import AnnouncementBar from './AnnouncementBar';
 import { useCart } from '../context/CartContext';
+import AuthMenu from './AuthMenu';
 
 type NavLink = {
   label: string;
@@ -17,7 +18,7 @@ const NAV_LINKS: NavLink[] = [
   { label: 'Home', href: '/' },
   { label: 'Shop', href: '/shop' },
   { label: 'About Us', href: '/about' },
-  { label: 'Blog', href: '/blogs' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Contact', href: '/contact' },
 ];
 
@@ -104,14 +105,7 @@ export default function Navbar() {
 
             {/* Icons - pinned to the far right edge */}
             <div className="flex shrink-0 items-center gap-5">
-              <button
-                aria-label="Account"
-                className="flex flex-col items-center gap-0.5 text-[11px]"
-                style={{ color: 'var(--color-ink)' }}
-              >
-                <User size={20} />
-                Account
-              </button>
+              <AuthMenu />
               <button
                 aria-label="Wishlist"
                 className="flex flex-col items-center gap-0.5 text-[11px]"
@@ -125,7 +119,8 @@ export default function Navbar() {
                 aria-label="Cart"
                 className="relative flex flex-col items-center gap-0.5 text-[11px]"
                 style={{ color: 'var(--color-ink)' }}
-              >
+              > 
+
                 <ShoppingCart size={20} />
                 Cart
                 {cartCount > 0 && (

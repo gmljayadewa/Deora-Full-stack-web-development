@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { DELIVERY_FEE } from '../../lib/shipping';
+import type { Product } from '@/lib/products';
+import { loadBuyNow, clearBuyNow, PAY_LABELS, type PayMethod } from '@/lib/buyNow';
 
 function formatPrice(value: number): string {
   return `Rs. ${value.toLocaleString('en-LK', {
@@ -13,9 +15,34 @@ function formatPrice(value: number): string {
   })}`;
 }
 
+type CheckoutItem = { product: Product; quantity: number };
+
 export default function CheckoutPage() {
-  const { items, totalPrice, ready } = useCart();
+  const { items, ready, clearCart } = useCart();
   const router = useRouter();
+
+  // Buy Now: ekama product eka + payment method eka (URL eke ?method=...)
+  const [buyNow, setBuyNow] = useState<CheckoutItem | null>(null);
+  const [method, setMethod] = useState<PayMethod | null>(null);
+  const [buyNowChecked, setBuyNowChecked] = useState(false);
+
+  useEffect(() => {
+  const m = new URLSearchParams(window.location.search).get('method');
+  if (m && m in PAY_LABELS) {
+    setMethod(m as PayMethod);
+    setBuyNow(loadBuyNow());
+  } else {
+    clearBuyNow(); // cart eken enawa nam, kalin cancel karapu Buy Now eka ain karanna
+  }
+  setBuyNowChecked(true);
+ }, []);
+
+  // Buy Now nam ekama product eka, nathnam cart eka
+  const checkoutItems: CheckoutItem[] = buyNow ? [buyNow] : items;
+  const subtotal = checkoutItems.reduce(
+    (sum, i) => sum + i.product.price * i.quantity,
+    0,
+  );
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -25,6 +52,7 @@ export default function CheckoutPage() {
     city: '',
     postalCode: '',
     province: '',
+    note: '',
   });
 
   const handleChange = (field: string, value: string) => {
@@ -34,26 +62,87 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (ready && items.length === 0) router.push('/shop');
-  }, [ready, items.length, router]);
+    if (buyNowChecked && ready && checkoutItems.length === 0) router.push('/shop');
+  }, [buyNowChecked, ready, checkoutItems.length, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return; // guard against double-click
     setLoading(true);
 
+    const shippingAddress = `${formData.address},${formData.city},${formData.postalCode},${formData.province}`;
+    const lineItems = checkoutItems.map(({ product, quantity }) => ({
+      productId: product.id,
+      quantity,
+    }));
+
     try {
-      // Sending the order request to the backend
+      // ===== COD / Bank Transfer / WhatsApp =====
+      if (method && method !== 'CARD') {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            paymentMethod: method,
+            customerName: formData.fullName,
+            phone: formData.phone,
+            note: formData.note,
+            shippingAddress,
+            items: lineItems,
+          }),
+        });
+
+        if (res.status === 401) {
+          setLoading(false);
+          alert('Please log in to continue.');
+          router.push(
+            `/login?next=${encodeURIComponent(`/checkout?method=${method}`)}`,
+          );
+          return;
+        }
+
+        if (!res.ok) {
+          let message = 'Failed to place order';
+          try {
+            const err = await res.json();
+            if (err?.message) message = err.message;
+          } catch {
+            // response was not JSON
+          }
+          throw new Error(message);
+        }
+
+        const data = await res.json();
+
+        if (buyNow) clearBuyNow();
+        else clearCart();
+
+        if (method === 'WHATSAPP') {
+          const lines = checkoutItems
+            .map(({ product, quantity }) => `${quantity} x ${product.name}`)
+            .join('\n');
+          const text =
+            `New order #${data.orderId}\n${lines}\n` +
+            `Total: ${formatPrice(data.total)}\n` +
+            `Name: ${formData.fullName}\nPhone: ${formData.phone}\n` +
+            `Address: ${formData.address}, ${formData.city}`;
+          window.location.href = `https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+          return;
+        }
+
+        router.push(`/checkout/success?order_id=${data.orderId}&method=${method}`);
+        return;
+      }
+
+      // ===== Card Payment (PayHere) =====
       const res = await fetch('/api/payment/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          shippingAddress: `${formData.address},${formData.city},${formData.postalCode},${formData.province}`,
-          items: items.map(({ product, quantity }) => ({
-            productId: product.id,
-            quantity,
-          })),
+          shippingAddress,
+          items: lineItems,
         }),
       });
 
@@ -61,7 +150,9 @@ export default function CheckoutPage() {
       if (res.status === 401) {
         setLoading(false);
         alert('Please log in to continue.');
-        router.push('/login?next=/checkout');
+        router.push(
+          `/login?next=${encodeURIComponent(`/checkout${method ? `?method=${method}` : ''}`)}`,
+        );
         return;
       }
 
@@ -77,7 +168,6 @@ export default function CheckoutPage() {
         throw new Error(message);
       }
 
-      // Parsing the response
       const data = await res.json();
 
       if (!data.hash || !data.orderId || !data.merchantId) {
@@ -85,25 +175,22 @@ export default function CheckoutPage() {
       }
 
       // PayHere must reach this URL from the internet (ngrok or your live site).
-      // Set NEXT_PUBLIC_APP_URL in .env when testing the notify webhook.
       const publicUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
 
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = 'https://sandbox.payhere.lk/pay/checkout';
 
-      // Splitting the full name into first and last name for the payment gateway
       const [firstName, ...rest] = formData.fullName.trim().split(/\s+/);
       const lastName = rest.join(' ') || firstName;
 
-      // Assembling the fields object
       const fields: Record<string, string> = {
         merchant_id: data.merchantId,
         return_url: `${window.location.origin}/checkout/success?order_id=${data.orderId}`,
         cancel_url: `${window.location.origin}/checkout/cancel`,
         notify_url: `${publicUrl}/api/payment/notify`,
         order_id: data.orderId,
-        items: items.map(({ product }) => product.name).join(','),
+        items: checkoutItems.map(({ product }) => product.name).join(','),
         currency: data.currency,
         amount: data.amount,
         first_name: firstName,
@@ -116,7 +203,6 @@ export default function CheckoutPage() {
         hash: data.hash,
       };
 
-      // Injecting fields as hidden inputs
       Object.entries(fields).forEach(([key, value]) => {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -140,7 +226,13 @@ export default function CheckoutPage() {
   };
 
   // Wait for the saved cart to load; the effect above redirects when it is empty
-  if (!ready || items.length === 0) return null;
+  if (!ready || !buyNowChecked || checkoutItems.length === 0) return null;
+
+  const buttonText = loading
+    ? 'Processing...'
+    : method
+      ? `Continue to ${PAY_LABELS[method]}`
+      : 'Place Order';
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -255,6 +347,17 @@ export default function CheckoutPage() {
                   style={{ borderColor: 'var(--color-line)', color: 'var(--color-ink)' }}
                 />
               </div>
+              <div className="sm:col-span-2">
+                <label className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+                  Special Note (optional)
+                </label>
+                <textarea
+                  value={formData.note}
+                  onChange={(e) => handleChange('note', e.target.value)}
+                  className="mt-1 w-full rounded-md border px-4 py-2 text-sm outline-none"
+                  style={{ borderColor: 'var(--color-line)', color: 'var(--color-ink)' }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -265,8 +368,14 @@ export default function CheckoutPage() {
             Order Summary
           </h2>
 
+          {method && (
+            <p className="mt-1 text-xs" style={{ color: 'var(--color-muted)' }}>
+              Payment: {PAY_LABELS[method]}
+            </p>
+          )}
+
           <div className="mt-4 flex flex-col gap-3">
-            {items.map(({ product, quantity }) => (
+            {checkoutItems.map(({ product, quantity }) => (
               <div key={product.id} className="flex items-center justify-between text-sm">
                 <span style={{ color: 'var(--color-muted)' }}>
                   {product.name} × {quantity}
@@ -278,15 +387,19 @@ export default function CheckoutPage() {
             ))}
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t pt-4 text-sm" style={{ borderColor: 'var(--color-line)' }}>
-                        <span style={{ color: 'var(--color-ink)' }}>{formatPrice(DELIVERY_FEE)}</span>
+          <div
+            className="mt-4 flex items-center justify-between border-t pt-4 text-sm"
+            style={{ borderColor: 'var(--color-line)' }}
+          >
+            <span style={{ color: 'var(--color-muted)' }}>Delivery</span>
+            <span style={{ color: 'var(--color-ink)' }}>{formatPrice(DELIVERY_FEE)}</span>
           </div>
           <div
             className="mt-2 flex items-center justify-between border-t pt-4 text-base font-bold"
             style={{ borderColor: 'var(--color-line)', color: 'var(--color-ink)' }}
           >
             <span>Total</span>
-             <span>{formatPrice(totalPrice + DELIVERY_FEE)}</span>
+            <span>{formatPrice(subtotal + DELIVERY_FEE)}</span>
           </div>
 
           <button
@@ -295,7 +408,7 @@ export default function CheckoutPage() {
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-md py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ background: 'var(--color-brand)' }}
           >
-            {loading ? 'Processing...' : 'Place Order'} <ArrowRight size={16} />
+            {buttonText} <ArrowRight size={16} />
           </button>
         </div>
       </form>

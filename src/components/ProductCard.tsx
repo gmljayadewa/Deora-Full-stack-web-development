@@ -6,6 +6,7 @@ import { Heart, Star, ShoppingCart, Check } from 'lucide-react';
 import { useState } from 'react';
 import type { Product } from '../lib/products';
 import { useCart } from '../context/CartContext';
+import BuyNowButton from './BuyNowButton';
 
 function formatPrice(value: number): string {
   return `Rs. ${value.toLocaleString('en-LK', {
@@ -86,23 +87,26 @@ export default function ProductCard({ product }: { product: Product }) {
         {formatPrice(product.price)}
       </p>
 
-      <button
-        onClick={handleAddToCart}
-        className="mt-auto flex w-full items-center justify-center gap-2 rounded-md py-2 text-xs font-medium text-white transition-transform hover:-translate-y-0.5"
-        style={{ background: added ? 'var(--color-secondary)' : 'var(--color-brand)' }}
-      >
-        {added ? (
-          <>
-            <Check size={14} />
-            Added
-          </>
-        ) : (
-          <>
-            <ShoppingCart size={14} />
-            Add to Cart
-          </>
-        )}
-      </button>
+      <div className="mt-auto flex flex-col gap-2 pt-3">
+        <BuyNowButton product={product} quantity={1} className="w-full py-2 text-xs" />
+        <button
+          onClick={handleAddToCart}
+          className="flex w-full items-center justify-center gap-2 rounded-md py-2 text-xs font-medium text-white transition-transform hover:-translate-y-0.5"
+          style={{ background: added ? 'var(--color-secondary)' : 'var(--color-brand)' }}
+        >
+          {added ? (
+            <>
+              <Check size={14} />
+              Added
+            </>
+          ) : (
+            <>
+              <ShoppingCart size={14} />
+              Add to Cart
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

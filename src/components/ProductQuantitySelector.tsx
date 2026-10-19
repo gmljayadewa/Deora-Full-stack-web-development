@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Minus, Plus, ShoppingCart, Check } from 'lucide-react';
 import type { Product } from '../lib/products';
 import { useCart } from '../context/CartContext';
+import BuyNowButton from './BuyNowButton';
 
 export default function ProductQuantitySelector({ product }: { product: Product }) {
   const { addItem } = useCart();
@@ -20,7 +21,7 @@ export default function ProductQuantitySelector({ product }: { product: Product 
   };
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center gap-3">
       <div
         className="flex items-center overflow-hidden rounded-md border"
         style={{ borderColor: 'var(--color-line)' }}
@@ -33,7 +34,10 @@ export default function ProductQuantitySelector({ product }: { product: Product 
         >
           <Minus size={16} />
         </button>
-        <span className="flex h-10 w-12 items-center justify-center text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+        <span
+          className="flex h-10 w-12 items-center justify-center text-sm font-medium"
+          style={{ color: 'var(--color-ink)' }}
+        >
           {quantity}
         </span>
         <button
@@ -63,6 +67,8 @@ export default function ProductQuantitySelector({ product }: { product: Product 
           </>
         )}
       </button>
+
+      <BuyNowButton product={product} quantity={quantity} className="flex-1 py-3 text-sm" />
     </div>
   );
 }

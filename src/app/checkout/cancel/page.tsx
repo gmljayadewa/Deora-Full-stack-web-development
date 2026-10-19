@@ -22,9 +22,9 @@ export default function CheckoutCancelPage() {
         Payment cancelled
       </h1>
       <p className="mx-auto mt-3 max-w-md text-sm" style={{ color: 'var(--color-muted)' }}>
-        You cancelled the payment, so nothing was charged. Your items are still in your cart if you
-        want to try again.
-      </p>
+        You cancelled the payment, so nothing was charged. You can go back and try again whenever
+        you are ready.
+     </p>
 
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Link

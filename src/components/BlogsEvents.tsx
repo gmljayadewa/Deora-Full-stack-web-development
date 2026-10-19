@@ -21,7 +21,7 @@ export default function BlogsSection() {
           From Our Blog
         </h2>
         <Link
-          href="/blogs"
+          href="/blog"
           className="flex items-center gap-1 text-sm font-medium"
           style={{ color: 'var(--color-brand)' }}
         >
@@ -33,7 +33,7 @@ export default function BlogsSection() {
         {posts.map((post) => (
           <Link
             key={post.slug}
-            href={`/blogs/${post.slug}`}
+            href={`/blog/${post.slug}`}
             className="group flex flex-col overflow-hidden rounded-lg border"
             style={{ borderColor: 'var(--color-line)' }}
           >

@@ -1,111 +1,167 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { decrementStock } from "@/services/inventory.service";
+import { getUserId } from "@/lib/auth";
+import { DELIVERY_FEE } from "@/lib/shipping";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const METHOD_MAP = {
+  COD: "CASH_ON_DELIVERY",
+  BANK: "BANK_TRANSFER",
+  WHATSAPP: "WHATSAPP",
+} as const;
 
-export async function POST(request: NextRequest){
-  try{
-    //step 1-2 token verify (add to cart/checkout logic)
-    const token = request.cookies.get("token")?.value;
-    if (!token) {
-      return NextResponse.json({message: "Unauthorized - Please log in"},{status: 401});
-  } 
- 
-  let userId : string;
-  try{
-    const decoded = jwt.verify(token, JWT_SECRET) as {id : string; role : string};
-    userId = decoded.id;
-  } catch {
-    return NextResponse.json({message: "Invalid or expired token"},{ status: 401});
-  }
+const MAX_LINES = 50;
+const MAX_QTY = 99;
 
-  //step 3: fetch the shippingAddress from the request body(required field from order schema)
-  const { shippingAddress } = await request.json();
-  if (!shippingAddress) {
-    return NextResponse.json({ message: "shippingAddress is required"},{ status: 400});
-  }  
+type CartLine = { productId: string; quantity: number };
 
-  //step 4: fetcht the cart for this user (checkout logic)
-  const cart = await prisma.cart.findUnique({
-    where : { userId },
-    include: {
-      items: {
-        include: {
-          product : true
-        },
-      },
-    },
-  });
-
-  if( !cart || cart.items.length === 0){
-  return NextResponse.json({ message:"Cart is empty"},{ status :400});
-  }
-
-  //step 5: check the prodcut active (can't order inactive product)
-  for(const item of cart.items){
-    if(!item.product.isActive){
-      return NextResponse.json({ message : `${item.product.name} is no longer available`},{ status : 400} );
-    }
-  }
-  
-  //step 6 : Price snapshot + total calculate(Day 2 logic)
-  const orderItemsData = cart.items.map((item) => ({
-    productId : item.productId,
-    quantity : item.quantity,
-    price : item.product.price, //snapshot - no need to link to product price
-
-  }));
-
-  const totalAmount = cart.items.reduce(
-    (sum,item) => sum + Number(item.product.price) * item.quantity, // if stock is enough,calculate the total amount
-    0
-  );
-
-  //step 7 : Interactive transaction - inventory decrement
-  // "why $transaction((tx) => {...})?" — several opratinf (decrement,create,delete
-    // ATOMIC විය යුතුයි — එකක් fail උනොත් ඔක්කොම rollback වෙන්ඩ ඕන.
-  const order = await prisma.$transaction(async (tx) => {
-    for (const item of cart.items) {
-      await decrementStock(
-        tx as Parameters<typeof decrementStock>[0],
-        item.productId,
-        item.quantity,
-        item.product.name,
+export async function POST(request: NextRequest) {
+  try {
+    const userId = getUserId(request);
+    if (!userId) {
+      return NextResponse.json(
+        { message: "Unauthorized-Please log in" },
+        { status: 401 },
       );
     }
 
-    // Create the order and order items in the same transaction.
-    const newOrder = await tx.order.create({
-        data: {
-          userId,
-          shippingAddress,
-          totalAmount,
-          status: "PENDING",
-          items: { create: orderItemsData },
-        },
-        include: { items: true },
-      });
+    const body = await request.json();
 
-      // Clear the cart after its items have been moved to the order.
-      await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-
-      return newOrder;
-  });
-
-    // Step 8: Order confirmation return කරනවා
-    return NextResponse.json(order, { status: 201 });
-
-  } catch (error: any) {
-    console.error("POST /api/orders error:", error);
-
-    if (error.message?.startsWith("Insufficient stock")) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    const method = METHOD_MAP[body.paymentMethod as keyof typeof METHOD_MAP];
+    if (!method) {
+      return NextResponse.json(
+        { message: "Invalid payment method" },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json({ message: "Failed to create order" }, { status: 500 });
+    if (!body.shippingAddress) {
+      return NextResponse.json(
+        { message: "Shipping Address is required" },
+        { status: 400 },
+      );
+    }
+
+    const items = body.items;
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ message: "Cart is empty" }, { status: 400 });
+    }
+    if (items.length > MAX_LINES) {
+      return NextResponse.json({ message: "Too many items" }, { status: 400 });
+    }
+
+    // Same product twice = one line
+    const wanted = new Map<string, number>();
+    for (const line of items as CartLine[]) {
+      const qty = Number(line?.quantity);
+      if (
+        typeof line?.productId !== "string" ||
+        !Number.isInteger(qty) ||
+        qty < 1
+      ) {
+        return NextResponse.json(
+          { message: "Invalid cart item" },
+          { status: 400 },
+        );
+      }
+      wanted.set(line.productId, (wanted.get(line.productId) ?? 0) + qty);
+    }
+    for (const qty of wanted.values()) {
+      if (qty > MAX_QTY) {
+        return NextResponse.json(
+          { message: "Quantity is too large" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Price eka hamadama DB eken
+    const products = await prisma.product.findMany({
+      where: { id: { in: [...wanted.keys()] } },
+    });
+
+    if (products.length !== wanted.size) {
+      return NextResponse.json(
+        {
+          message:
+            "Some products are no longer available. Please refresh your cart.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const hidden = products.find((p) => !p.isActive);
+    if (hidden) {
+      return NextResponse.json(
+        { message: `${hidden.name} is not available right now` },
+        { status: 400 },
+      );
+    }
+
+    const lines = products.map((p) => ({
+      product: p,
+      quantity: wanted.get(p.id)!,
+    }));
+
+    const itemsTotal = lines.reduce(
+      (sum, l) => sum + Number(l.product.price) * l.quantity,
+      0,
+    );
+    const totalAmount = itemsTotal + DELIVERY_FEE;
+
+    // Stock adu karala order eka hadanna: okkoma ekama transaction eke
+    let order;
+    try {
+      order = await prisma.$transaction(async (tx) => {
+        for (const l of lines) {
+          const updated = await tx.inventory.updateMany({
+            where: { productId: l.product.id, quantity: { gte: l.quantity } },
+            data: { quantity: { decrement: l.quantity } },
+          });
+          if (updated.count === 0) {
+            throw new Error(`OUT_OF_STOCK:${l.product.name}`);
+          }
+        }
+
+        return tx.order.create({
+          data: {
+            userId,
+            customerName: body.customerName,
+            phone: body.phone,
+            note: body.note,
+            totalAmount,
+            shippingAddress: body.shippingAddress,
+            status: "PENDING",
+            items: {
+              create: lines.map((l) => ({
+                productId: l.product.id,
+                quantity: l.quantity,
+                price: l.product.price,
+              })),
+            },
+            payment: {
+              create: { amount: totalAmount, method, status: "PENDING" },
+            },
+          },
+        });
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith("OUT_OF_STOCK:")) {
+        return NextResponse.json(
+          {
+            message: `${e.message.replace("OUT_OF_STOCK:", "")} is out of stock`,
+          },
+          { status: 400 },
+        );
+      }
+      throw e;
+    }
+
+    return NextResponse.json({ orderId: order.id, total: totalAmount });
+  } catch (error) {
+    console.error("POST /api/orders error:", error);
+    return NextResponse.json(
+      { message: "Failed to place order" },
+      { status: 500 },
+    );
   }
 }
-

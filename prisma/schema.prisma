@@ -25,10 +25,23 @@ model User {
 
   cart      Cart?
   orders    Order[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
 
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
 
 // ==============================
 // CATEGORY
@@ -123,6 +136,9 @@ model Order {
   totalAmount     Decimal       @db.Decimal(10, 2)
   status          OrderStatus   @default(PENDING)
   shippingAddress String
+  customerName    String?
+  phone           String?
+  note            String?
 
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -222,6 +238,7 @@ enum PaymentMethod {
   CASH_ON_DELIVERY
   CARD
   BANK_TRANSFER
+  WHATSAPP
 }
 
 enum PaymentStatus {

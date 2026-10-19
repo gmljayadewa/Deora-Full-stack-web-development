@@ -1,6 +1,15 @@
 import Link from 'next/link';
-import { CheckCircle2, Clock, XCircle, SearchX, ArrowRight } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  XCircle,
+  SearchX,
+  ArrowRight,
+  Landmark,
+  MessageCircle,
+} from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { BANK_DETAILS } from '@/lib/bank';
 import SuccessEffects from './SuccessEffects';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +27,7 @@ function formatPrice(value: number): string {
   })}`;
 }
 
-type View = 'paid' | 'cod' | 'pending' | 'failed' | 'notfound';
+type View = 'paid' | 'cod' | 'bank' | 'whatsapp' | 'pending' | 'failed' | 'notfound';
 
 const VIEWS = {
   paid: {
@@ -34,6 +43,20 @@ const VIEWS = {
     bg: 'rgba(21, 128, 61, 0.1)',
     title: 'Your order is placed',
     text: 'You chose cash on delivery. Please pay when your order arrives.',
+  },
+  bank: {
+    icon: Landmark,
+    color: '#1d4ed8',
+    bg: 'rgba(29, 78, 216, 0.1)',
+    title: 'Your order is placed',
+    text: 'Please transfer the total amount using the bank details below. We will confirm your order once we receive the payment.',
+  },
+  whatsapp: {
+    icon: MessageCircle,
+    color: '#15803d',
+    bg: 'rgba(21, 128, 61, 0.1)',
+    title: 'Your order is received',
+    text: 'Please send your order details to us on WhatsApp so we can confirm it.',
   },
   pending: {
     icon: Clock,
@@ -63,7 +86,7 @@ export default async function CheckoutSuccessPage({
 }: {
   searchParams: SearchParams;
 }) {
-    const { order_id: rawOrderId } = await searchParams;
+  const { order_id: rawOrderId } = await searchParams;
   // PayHere adds its own order_id to the return URL, so this can be a list
   const orderId = Array.isArray(rawOrderId) ? rawOrderId[0] : rawOrderId;
 
@@ -77,11 +100,17 @@ export default async function CheckoutSuccessPage({
       })
     : null;
 
+  const method = order?.payment?.method;
+  const status = order?.payment?.status;
+  const isCard = method === 'CARD';
+
   let view: View = 'notfound';
   if (order) {
-    if (order.payment?.method === 'CASH_ON_DELIVERY') view = 'cod';
-    else if (order.payment?.status === 'PAID') view = 'paid';
-    else if (order.payment?.status === 'FAILED') view = 'failed';
+    if (method === 'CASH_ON_DELIVERY') view = 'cod';
+    else if (method === 'BANK_TRANSFER') view = status === 'PAID' ? 'paid' : 'bank';
+    else if (method === 'WHATSAPP') view = 'whatsapp';
+    else if (status === 'PAID') view = 'paid';
+    else if (status === 'FAILED') view = 'failed';
     else view = 'pending';
   }
 
@@ -94,11 +123,16 @@ export default async function CheckoutSuccessPage({
     : 0;
   const deliveryPaid = order ? Number(order.totalAmount) - itemsSubtotal : 0;
 
+  const shortId = order ? order.id.slice(-8).toUpperCase() : '';
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
+      {/* Cart eka clear karanne Card payment walata witharai.
+          COD / Bank / WhatsApp walata checkout page eka kalinma clear karala thiyenawa. */}
       <SuccessEffects
-        clearCartNow={view === 'paid' || view === 'cod' || view === 'pending'}
-        refreshWhilePending={view === 'pending'}
+        clearCartNow={isCard && (view === 'paid' || view === 'pending')}
+        refreshWhilePending={isCard && view === 'pending'}
       />
 
       <div className="text-center">
@@ -127,7 +161,7 @@ export default async function CheckoutSuccessPage({
           <div className="flex items-center justify-between text-sm">
             <span style={{ color: 'var(--color-muted)' }}>Order number</span>
             <span className="font-semibold" style={{ color: 'var(--color-ink)' }}>
-              #{order.id.slice(-8).toUpperCase()}
+              #{shortId}
             </span>
           </div>
 
@@ -158,6 +192,61 @@ export default async function CheckoutSuccessPage({
             <span>Total</span>
             <span>{formatPrice(Number(order.totalAmount))}</span>
           </div>
+        </div>
+      )}
+
+      {/* Bank Transfer details */}
+      {order && view === 'bank' && (
+        <div
+          className="mt-6 rounded-xl border p-5 text-sm"
+          style={{ borderColor: 'var(--color-line)', background: 'white' }}
+        >
+          <p className="font-semibold" style={{ color: 'var(--color-ink)' }}>
+            Bank transfer details
+          </p>
+          <dl className="mt-3 space-y-2">
+            <div className="flex justify-between">
+              <dt style={{ color: 'var(--color-muted)' }}>Bank</dt>
+              <dd style={{ color: 'var(--color-ink)' }}>{BANK_DETAILS.bank}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt style={{ color: 'var(--color-muted)' }}>Branch</dt>
+              <dd style={{ color: 'var(--color-ink)' }}>{BANK_DETAILS.branch}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt style={{ color: 'var(--color-muted)' }}>Account name</dt>
+              <dd style={{ color: 'var(--color-ink)' }}>{BANK_DETAILS.accountName}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt style={{ color: 'var(--color-muted)' }}>Account number</dt>
+              <dd className="font-semibold" style={{ color: 'var(--color-ink)' }}>
+                {BANK_DETAILS.accountNumber}
+              </dd>
+            </div>
+            <div className="flex justify-between border-t pt-2" style={{ borderColor: 'var(--color-line)' }}>
+              <dt style={{ color: 'var(--color-muted)' }}>Amount to pay</dt>
+              <dd className="font-semibold" style={{ color: 'var(--color-ink)' }}>
+                {formatPrice(Number(order.totalAmount))}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-3 text-xs" style={{ color: 'var(--color-muted)' }}>
+            Please use order number #{shortId} as the payment reference.
+          </p>
+          {whatsappNumber && (
+            <a
+              href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                `Hi, I paid for order #${shortId}. Here is my payment slip.`,
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium underline"
+              style={{ color: 'var(--color-brand)' }}
+            >
+              <MessageCircle size={16} />
+              Send payment slip on WhatsApp
+            </a>
+          )}
         </div>
       )}
 

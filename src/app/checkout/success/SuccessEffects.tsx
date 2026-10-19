@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { loadBuyNow, clearBuyNow } from '@/lib/buyNow';
 
 export default function SuccessEffects({
   clearCartNow,
@@ -18,7 +19,9 @@ export default function SuccessEffects({
   useEffect(() => {
     if (clearCartNow && !cleared.current) {
       cleared.current = true;
-      clearCart();
+      // Buy Now walin awoth cart eka thiyenna dennama, Buy Now item eka witharak ain karanna
+      if (loadBuyNow()) clearBuyNow();
+      else clearCart();
     }
   }, [clearCartNow, clearCart]);
 
