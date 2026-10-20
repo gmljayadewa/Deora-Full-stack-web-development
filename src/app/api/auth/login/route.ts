@@ -54,6 +54,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Email එක verify කරලා නැත්නම් login වෙන්න දෙන්නේ නෑ
+    // (password හරි උනාට පස්සේ විතරයි බලන්නේ, එතකොට වෙන කෙනෙක්ට "මේ email එක register වෙලා" කියලා දැනගන්න බෑ)
+    if (!existingUser.emailVerified) {
+      return NextResponse.json(
+        {
+          message: "Please verify your email before logging in.",
+          code: "EMAIL_NOT_VERIFIED",
+        },
+        { status: 403 },
+      );
+    }
+
     // ==============================
     // NEW: Create the JWT token
     // ==============================

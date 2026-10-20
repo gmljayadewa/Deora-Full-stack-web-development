@@ -28,6 +28,10 @@ export default function LoginPage() {
 
     const result = await login(email, password);
     if (!result.ok) {
+      if (result.code === "EMAIL_NOT_VERIFIED") {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
       setError(result.message || "Login failed");
       setLoading(false);
       return;

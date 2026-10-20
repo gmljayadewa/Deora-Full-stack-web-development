@@ -1,12 +1,12 @@
-// make the API response JSON
 import { NextResponse } from "next/server";
-// database client
 import { prisma } from "@/lib/prisma";
 
-// GET: fetch all products
+// GET: public store walata active products witharai
 export async function GET() {
   try {
-    const products = await prisma.product.findMany();
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+    });
     return NextResponse.json(products, { status: 200 });
   } catch (error) {
     console.error("GET /api/products error:", error);
@@ -17,36 +17,69 @@ export async function GET() {
   }
 }
 
-// POST: create a product
+// POST: product ekak hadanawa (proxy eken ADMIN witharai)
 export async function POST(request: Request) {
   try {
-    // Step 1: read the request body
     const body = await request.json();
-    const { name, description, price, categoryId, image, isActive } = body;
 
-    // Step 2: validation
-    if (!name || price === undefined || !categoryId) {
+    const name = String(body.name ?? "").trim();
+    const price = Number(body.price);
+    const categoryId = String(body.categoryId ?? "");
+    const stock = body.stock === undefined ? 0 : Number(body.stock);
+
+    if (!name || name.length > 200) {
       return NextResponse.json(
-        { message: "name, price and categoryId are required" },
+        { message: "A valid name is required" },
+        { status: 400 },
+      );
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      return NextResponse.json(
+        { message: "Price must be greater than 0" },
+        { status: 400 },
+      );
+    }
+    if (!categoryId) {
+      return NextResponse.json(
+        { message: "categoryId is required" },
+        { status: 400 },
+      );
+    }
+    if (!Number.isInteger(stock) || stock < 0 || stock > 1_000_000) {
+      return NextResponse.json(
+        { message: "Stock must be a whole number" },
         { status: 400 },
       );
     }
 
-    // Step 3: create the product
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+    if (!category) {
+      return NextResponse.json(
+        { message: "Category not found" },
+        { status: 400 },
+      );
+    }
+
+    // Nested create: product saha inventory row eka ekama atomic operation eke
     const newProduct = await prisma.product.create({
       data: {
         name,
-        description,
+        description:
+          typeof body.description === "string" ? body.description : null,
         price,
         categoryId,
-        image,
-        isActive,
-        ingredients: body.ingredients ?? "",
-        usage: body.usage ?? "",
+        image: typeof body.image === "string" ? body.image : null,
+        isActive: typeof body.isActive === "boolean" ? body.isActive : true,
+        ingredients:
+          typeof body.ingredients === "string" ? body.ingredients : "",
+        usage: typeof body.usage === "string" ? body.usage : "",
+        inventory: { create: { quantity: stock } },
       },
+      include: { inventory: true },
     });
 
-    // Step 4: return the new product
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
     console.error("POST /api/products error:", error);

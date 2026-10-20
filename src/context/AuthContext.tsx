@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   createContext,
@@ -6,8 +6,8 @@ import {
   useEffect,
   useState,
   type ReactNode,
-} from 'react';
-import { useRouter } from 'next/navigation';
+} from "react";
+import { useRouter } from "next/navigation";
 
 export type AuthUser = {
   id: string;
@@ -15,10 +15,10 @@ export type AuthUser = {
   email: string;
   phone?: string | null;
   address?: string | null;
-  role: 'CUSTOMER' | 'ADMIN';
+  role: "CUSTOMER" | "ADMIN";
 };
 
-type Result = { ok: boolean; message?: string };
+type Result = { ok: boolean; message?: string; code?: string };
 
 type AuthContextType = {
   user: AuthUser | null;
@@ -37,9 +37,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function post(url: string, body?: unknown) {
   const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });
   let data: any = null;
@@ -54,7 +54,7 @@ async function post(url: string, body?: unknown) {
 // Login wela inna user wa DB eken ganna (logged out nam null)
 async function fetchMe(): Promise<AuthUser | null> {
   try {
-    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    const res = await fetch("/api/auth/me", { credentials: "include" });
     const data = await res.json();
     return data.user ?? null;
   } catch {
@@ -74,23 +74,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<Result> => {
-    const { res, data } = await post('/api/auth/login', { email, password });
-    if (!res.ok) return { ok: false, message: data?.message || 'Login failed' };
+    const { res, data } = await post("/api/auth/login", { email, password });
+    if (!res.ok)
+      return {
+        ok: false,
+        message: data?.message || "Login failed",
+        code: data?.code,
+      };
     setUser(await fetchMe());
     return { ok: true };
   };
 
-  const register: AuthContextType['register'] = async (payload) => {
-    const { res, data } = await post('/api/auth/register', payload);
-    if (!res.ok) return { ok: false, message: data?.message || 'Registration failed' };
-    // Register unama auto-login karanawa
-    return login(payload.email, payload.password);
+  const register: AuthContextType["register"] = async (payload) => {
+    const { res, data } = await post("/api/auth/register", payload);
+    if (!res.ok)
+      return { ok: false, message: data?.message || "Registration failed" };
+    // Email verify කරනකම් login කරන්නේ නෑ
+    return { ok: true };
   };
 
   const logout = async () => {
-    await post('/api/auth/logout');
+    await post("/api/auth/logout");
     setUser(null);
-    router.push('/');
+    router.push("/");
     router.refresh();
   };
 
@@ -103,6 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
   return ctx;
 }

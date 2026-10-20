@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 import { generatePayHereHash } from "@/lib/payhere";
 import { DELIVERY_FEE } from "@/lib/shipping";
+import { decrementStock, OutOfStockError } from "@/services/inventory.service";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const MAX_LINES = 50;
@@ -122,28 +123,43 @@ export async function POST(request: NextRequest) {
     const totalAmount = itemsTotal + DELIVERY_FEE;
 
     // Creating the order in the database
-    const order = await prisma.order.create({
-      data: {
-        userId,
-        totalAmount,
-        shippingAddress,
-        status: "PENDING",
-        items: {
-          create: lines.map((l) => ({
-            productId: l.product.id,
-            quantity: l.quantity,
-            price: l.product.price,
-          })),
-        },
-        payment: {
-          create: {
-            amount: totalAmount,
-            method: "CARD",
+    let order;
+    try {
+      order = await prisma.$transaction(async (tx) => {
+        // Stock adu karanna (COD / Bank wage hama method ekatama ekama rule eka)
+        for (const l of lines) {
+          await decrementStock(tx, l.product.id, l.quantity, l.product.name);
+        }
+
+        return tx.order.create({
+          data: {
+            userId,
+            totalAmount,
+            shippingAddress,
             status: "PENDING",
+            items: {
+              create: lines.map((l) => ({
+                productId: l.product.id,
+                quantity: l.quantity,
+                price: l.product.price,
+              })),
+            },
+            payment: {
+              create: {
+                amount: totalAmount,
+                method: "CARD",
+                status: "PENDING",
+              },
+            },
           },
-        },
-      },
-    });
+        });
+      });
+    } catch (e) {
+      if (e instanceof OutOfStockError) {
+        return NextResponse.json({ message: e.message }, { status: 400 });
+      }
+      throw e;
+    }
 
     // Generating the hash and responding
     const currency = "LKR";

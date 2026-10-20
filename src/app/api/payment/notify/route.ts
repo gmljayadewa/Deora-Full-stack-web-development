@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { restoreStock } from "@/services/inventory.service";
 
 const md5Upper = (text: string) =>
   crypto.createHash("md5").update(text).digest("hex").toUpperCase();
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Bad request" }, { status: 400 });
     }
 
-    // 1) Verify the signature (proves the request really came from PayHere)
+    // 1) Signature verify (request eka PayHere eken da kiyala)
     const localSig = md5Upper(
       merchantId +
         orderId +
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    // 2) Find the payment and check it matches what we expect
+    // 2) Payment eka hoyala, amount / currency / method check
     const payment = await prisma.payment.findUnique({
       where: { orderId },
       include: { order: { include: { items: true } } },
@@ -54,7 +55,12 @@ export async function POST(req: NextRequest) {
     if (!payment) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
-
+    if (payment.method !== "CARD") {
+      return NextResponse.json(
+        { error: "Not a card payment" },
+        { status: 400 },
+      );
+    }
     if (
       currency !== "LKR" ||
       Number(amount).toFixed(2) !== Number(payment.amount).toFixed(2)
@@ -63,47 +69,71 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
     }
 
-    // 3) PayHere can send the same notification more than once
-    if (payment.status === "PAID") {
-      return NextResponse.json({ received: true });
-    }
-
     // status_code: 2 = success, 0 = pending, -1 = cancelled, -2 = failed, -3 = chargeback
     if (statusCode === "2") {
-      await prisma.$transaction([
-        prisma.payment.update({
-          where: { orderId },
+      if (!paymentId) {
+        console.error("PayHere success without payment_id for order", orderId);
+        return NextResponse.json(
+          { error: "Missing payment id" },
+          { status: 400 },
+        );
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // "Claim": ekama welawe notifications 2k awath, ekakata witharai count = 1
+        const claimed = await tx.payment.updateMany({
+          where: { orderId, status: { in: ["PENDING", "FAILED"] } },
           data: {
             status: "PAID",
-            transactionId: paymentId || null,
+            transactionId: paymentId,
             paidAt: new Date(),
           },
-        }),
-        prisma.order.update({
-          where: { id: orderId },
+        });
+        if (claimed.count === 0) return; // duplicate notification
+
+        const confirmed = await tx.order.updateMany({
+          where: { id: orderId, status: "PENDING" },
           data: { status: "CONFIRMED" },
-        }),
-        // remove the paid items from the customer's saved cart
-        prisma.cartItem.deleteMany({
+        });
+        if (confirmed.count === 0) {
+          // Order eka kalinma cancel wela (stock aye ekathu wela). Mudal awa: admin refund karanna ona.
+          console.error(
+            "PAYMENT_AFTER_CANCEL: refund needed for order",
+            orderId,
+          );
+          return;
+        }
+
+        // Paid items customer ge saved cart eken ain karanna
+        await tx.cartItem.deleteMany({
           where: {
             cart: { userId: payment.order.userId },
             productId: { in: payment.order.items.map((i) => i.productId) },
           },
-        }),
-      ]);
+        });
+      });
     } else if (statusCode === "-1" || statusCode === "-2") {
-      await prisma.$transaction([
-        prisma.payment.update({
-          where: { orderId },
+      await prisma.$transaction(async (tx) => {
+        const claimed = await tx.payment.updateMany({
+          where: { orderId, status: "PENDING" },
           data: { status: "FAILED" },
-        }),
-        prisma.order.update({
-          where: { id: orderId },
+        });
+        if (claimed.count === 0) return; // already handled
+
+        const cancelled = await tx.order.updateMany({
+          where: { id: orderId, status: { not: "CANCELLED" } },
           data: { status: "CANCELLED" },
-        }),
-      ]);
+        });
+        // Stock aye ekathu karanne ekapaarak witharai
+        if (cancelled.count === 1) {
+          await restoreStock(tx, payment.order.items);
+        }
+      });
+    } else if (statusCode === "-3") {
+      // Chargeback: danata log witharai (payment status enum eke CHARGEBACK nae)
+      console.error("PAYHERE_CHARGEBACK for order", orderId);
     }
-    // 0 (pending) and -3 (chargeback): nothing to do for now
+    // 0 (pending): nothing to do
 
     return NextResponse.json({ received: true });
   } catch (error) {

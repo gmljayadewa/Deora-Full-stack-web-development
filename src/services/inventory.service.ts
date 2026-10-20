@@ -1,10 +1,12 @@
 import { Prisma } from "@prisma/client";
 
-// "why accept 'tx' as a parameter?" — මේ function එක $transaction block එකක්
-// ඇතුළේ call වෙන්ඩ ඕන (order creation එකේම atomic transaction එකේම කොටසක්
-// වෙන්ඩ ඕන). Prisma client (`prisma`) එකම use කළොත්, transaction එකෙන්
-// පිටින් run වෙනවා — atomicity guarantee එක නැති වෙනවා.
+export class OutOfStockError extends Error {
+  constructor(public productName: string) {
+    super(`${productName} is out of stock`);
+  }
+}
 
+// tx = $transaction eke athule thiyena client (order eka ekka atomic wenna)
 export async function decrementStock(
   tx: Prisma.TransactionClient,
   productId: string,
@@ -12,16 +14,22 @@ export async function decrementStock(
   productName: string,
 ) {
   const result = await tx.inventory.updateMany({
-    where: {
-      productId,
-      quantity: { gte: quantity },
-    },
-    data: {
-      quantity: { decrement: quantity },
-    },
+    where: { productId, quantity: { gte: quantity } },
+    data: { quantity: { decrement: quantity } },
   });
 
-  if (result.count === 0) {
-    throw new Error(`Insufficient stock for ${productName}`);
+  // Inventory row eka nathi unath, stock madi unath: dekatama mehema
+  if (result.count === 0) throw new OutOfStockError(productName);
+}
+
+export async function restoreStock(
+  tx: Prisma.TransactionClient,
+  items: { productId: string; quantity: number }[],
+) {
+  for (const item of items) {
+    await tx.inventory.updateMany({
+      where: { productId: item.productId },
+      data: { quantity: { increment: item.quantity } },
+    });
   }
 }

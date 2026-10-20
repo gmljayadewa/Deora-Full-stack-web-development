@@ -26,6 +26,8 @@ model User {
   cart      Cart?
   orders    Order[]
   passwordResetTokens PasswordResetToken[]
+  emailVerified            DateTime?
+  emailVerificationTokens  EmailVerificationToken[]
 
   @@map("users")
 }
@@ -41,6 +43,19 @@ model PasswordResetToken {
 
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 // ==============================

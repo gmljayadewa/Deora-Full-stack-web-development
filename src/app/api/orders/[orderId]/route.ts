@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth } from "@/lib/auth";
+import { restoreStock } from "@/services/inventory.service";
 
 const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED"] as const;
 const ORDER_STATUSES = [
@@ -69,6 +70,15 @@ export async function PATCH(
       });
       if (!order) throw new Error("NOT_FOUND");
 
+      // Cancel karapu order eka aye open karanna baha (stock aye adu karanna wenawa)
+      if (
+        order.status === "CANCELLED" &&
+        orderStatus &&
+        orderStatus !== "CANCELLED"
+      ) {
+        throw new Error("ORDER_CANCELLED");
+      }
+
       // Payment eka PAID karama, order eka PENDING nam CONFIRMED karanawa
       let nextStatus = orderStatus;
       if (
@@ -89,19 +99,13 @@ export async function PATCH(
         });
       }
 
-      // Order cancel karoth stock eka aye ekathu karanawa.
-      // Card orders walata stock adu wenne payment success unama (notify route), eka nisa ewa skip karanawa.
-      if (
-        nextStatus === "CANCELLED" &&
-        order.status !== "CANCELLED" &&
-        order.payment?.method !== "CARD"
-      ) {
-        for (const item of order.items) {
-          await tx.inventory.updateMany({
-            where: { productId: item.productId },
-            data: { quantity: { increment: item.quantity } },
-          });
-        }
+      // Cancel: "claim" karala stock aye ekathu karanawa (ekapaarak witharai, method ekata balanne na)
+      if (nextStatus === "CANCELLED") {
+        const claimed = await tx.order.updateMany({
+          where: { id: orderId, status: { not: "CANCELLED" } },
+          data: { status: "CANCELLED" },
+        });
+        if (claimed.count === 1) await restoreStock(tx, order.items);
       }
 
       return tx.order.update({
@@ -120,7 +124,13 @@ export async function PATCH(
     if (error instanceof Error && error.message === "NOT_FOUND") {
       return NextResponse.json({ message: "Order not found" }, { status: 404 });
     }
-    console.error("PATCH /api/admin/orders error:", error);
+    if (error instanceof Error && error.message === "ORDER_CANCELLED") {
+      return NextResponse.json(
+        { message: "A cancelled order cannot be reopened" },
+        { status: 400 },
+      );
+    }
+    console.error("PATCH /api/orders/[orderId] error:", error);
     return NextResponse.json(
       { message: "Failed to update order" },
       { status: 500 },
