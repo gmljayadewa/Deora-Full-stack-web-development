@@ -9,6 +9,13 @@ export const PAY_LABELS: Record<PayMethod, string> = {
   BANK: "Bank Transfer",
 };
 
+export const PAY_DESCRIPTIONS: Record<PayMethod, string> = {
+  WHATSAPP: "Send your order details directly to the shop on WhatsApp.",
+  COD: "Place the order now and pay when it is delivered.",
+  CARD: "Pay online securely before your order is confirmed.",
+  BANK: "Place the order now and send the payment using the bank details provided.",
+};
+
 const KEY = "deora-buy-now";
 
 export function saveBuyNow(product: Product, quantity: number) {

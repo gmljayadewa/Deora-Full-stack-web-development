@@ -1,12 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Minus, Plus, ShoppingCart, Check } from 'lucide-react';
-import type { Product } from '../lib/products';
-import { useCart } from '../context/CartContext';
-import BuyNowButton from './BuyNowButton';
+import { useState } from "react";
+import { Minus, Plus, ShoppingCart, Check } from "lucide-react";
+import type { Product } from "../lib/products";
+import { useCart } from "../context/CartContext";
+import BuyNowButton from "./BuyNowButton";
 
-export default function ProductQuantitySelector({ product }: { product: Product }) {
+export default function ProductQuantitySelector({
+  product,
+}: {
+  product: Product;
+}) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -24,19 +28,19 @@ export default function ProductQuantitySelector({ product }: { product: Product 
     <div className="flex flex-wrap items-center gap-3">
       <div
         className="flex items-center overflow-hidden rounded-md border"
-        style={{ borderColor: 'var(--color-line)' }}
+        style={{ borderColor: "var(--color-line)" }}
       >
         <button
           aria-label="Decrease quantity"
           onClick={decrease}
           className="flex h-10 w-10 items-center justify-center"
-          style={{ color: 'var(--color-ink)' }}
+          style={{ color: "var(--color-ink)" }}
         >
           <Minus size={16} />
         </button>
         <span
           className="flex h-10 w-12 items-center justify-center text-sm font-medium"
-          style={{ color: 'var(--color-ink)' }}
+          style={{ color: "var(--color-ink)" }}
         >
           {quantity}
         </span>
@@ -44,16 +48,26 @@ export default function ProductQuantitySelector({ product }: { product: Product 
           aria-label="Increase quantity"
           onClick={increase}
           className="flex h-10 w-10 items-center justify-center"
-          style={{ color: 'var(--color-ink)' }}
+          style={{ color: "var(--color-ink)" }}
         >
           <Plus size={16} />
         </button>
       </div>
 
+      <BuyNowButton
+        product={product}
+        quantity={quantity}
+        className="flex-1 py-3 text-sm"
+      />
+
       <button
         onClick={handleAddToCart}
-        className="flex flex-1 items-center justify-center gap-2 rounded-md py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-        style={{ background: added ? 'var(--color-secondary)' : 'var(--color-brand)' }}
+        className="flex flex-1 items-center justify-center gap-2 rounded-md py-3 text-sm font-semibold transition-colors"
+        style={{
+          background: added ? "var(--color-brand)" : "transparent",
+          color: added ? "#fff" : "var(--color-brand)",
+          border: "1.5px solid var(--color-brand)",
+        }}
       >
         {added ? (
           <>
@@ -67,8 +81,6 @@ export default function ProductQuantitySelector({ product }: { product: Product 
           </>
         )}
       </button>
-
-      <BuyNowButton product={product} quantity={quantity} className="flex-1 py-3 text-sm" />
     </div>
   );
 }
