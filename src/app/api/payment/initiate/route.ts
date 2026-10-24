@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { prisma } from "@/lib/prisma";
+import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { generatePayHereHash } from "@/lib/payhere";
 import { DELIVERY_FEE } from "@/lib/shipping";
 import { decrementStock, OutOfStockError } from "@/services/inventory.service";
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
             },
           },
         });
-      });
+      }, TX_OPTIONS);
     } catch (e) {
       if (e instanceof OutOfStockError) {
         return NextResponse.json({ message: e.message }, { status: 400 });

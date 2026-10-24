@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
+import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { restoreStock } from "@/services/inventory.service";
 
 const md5Upper = (text: string) =>
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
             productId: { in: payment.order.items.map((i) => i.productId) },
           },
         });
-      });
+      }, TX_OPTIONS);
     } else if (statusCode === "-1" || statusCode === "-2") {
       await prisma.$transaction(async (tx) => {
         const claimed = await tx.payment.updateMany({
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
         if (cancelled.count === 1) {
           await restoreStock(tx, payment.order.items);
         }
-      });
+      }, TX_OPTIONS);
     } else if (statusCode === "-3") {
       // Chargeback: danata log witharai (payment status enum eke CHARGEBACK nae)
       console.error("PAYHERE_CHARGEBACK for order", orderId);

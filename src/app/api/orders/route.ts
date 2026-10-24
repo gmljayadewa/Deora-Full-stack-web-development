@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { getUserId } from "@/lib/auth";
 import { DELIVERY_FEE } from "@/lib/shipping";
+import { decrementStock, OutOfStockError } from "@/services/inventory.service";
 
 const METHOD_MAP = {
   COD: "CASH_ON_DELIVERY",
@@ -113,13 +114,7 @@ export async function POST(request: NextRequest) {
     try {
       order = await prisma.$transaction(async (tx) => {
         for (const l of lines) {
-          const updated = await tx.inventory.updateMany({
-            where: { productId: l.product.id, quantity: { gte: l.quantity } },
-            data: { quantity: { decrement: l.quantity } },
-          });
-          if (updated.count === 0) {
-            throw new Error(`OUT_OF_STOCK:${l.product.name}`);
-          }
+          await decrementStock(tx, l.product.id, l.quantity, l.product.name);
         }
 
         return tx.order.create({
@@ -143,15 +138,10 @@ export async function POST(request: NextRequest) {
             },
           },
         });
-      });
+      }, TX_OPTIONS);
     } catch (e) {
-      if (e instanceof Error && e.message.startsWith("OUT_OF_STOCK:")) {
-        return NextResponse.json(
-          {
-            message: `${e.message.replace("OUT_OF_STOCK:", "")} is out of stock`,
-          },
-          { status: 400 },
-        );
+      if (e instanceof OutOfStockError) {
+        return NextResponse.json({ message: e.message }, { status: 400 });
       }
       throw e;
     }

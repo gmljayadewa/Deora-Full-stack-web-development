@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import PasswordInput from "@/components/PasswordInput";
 
-// Open redirect nathi karanna: dan site eke path ekak witharai
-function safeNext(): string {
-  const next = new URLSearchParams(window.location.search).get("next");
+// Open redirect නතර කරන්න: site එකේ path එකක් විතරයි
+function safeNext(next: string | null): string {
   return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
 }
 
@@ -20,6 +19,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // මුලින් null: server එකේ HTML එකයි browser එකේ පළමු render එකයි සමානයි
+  const [next, setNext] = useState<string | null>(null);
+
+  // Page එක load වුණාට පස්සේ විතරයි URL එක කියවන්නේ
+  useEffect(() => {
+    setNext(new URLSearchParams(window.location.search).get("next"));
+  }, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -28,6 +35,7 @@ export default function LoginPage() {
 
     const result = await login(email, password);
     if (!result.ok) {
+      // Email එක තහවුරු කරලා නැත්නම් verify page එකට
       if (result.code === "EMAIL_NOT_VERIFIED") {
         router.push(`/verify-email?email=${encodeURIComponent(email)}`);
         return;
@@ -36,15 +44,13 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-    router.push(safeNext());
+    router.push(safeNext(next));
     router.refresh();
   };
 
-  const registerHref = (() => {
-    if (typeof window === "undefined") return "/register";
-    const next = new URLSearchParams(window.location.search).get("next");
-    return next ? `/register?next=${encodeURIComponent(next)}` : "/register";
-  })();
+  const registerHref = next
+    ? `/register?next=${encodeURIComponent(next)}`
+    : "/register";
 
   return (
     <div className="mx-auto max-w-md px-6 py-16">
@@ -79,6 +85,7 @@ export default function LoginPage() {
             }}
           />
         </div>
+
         <div>
           <label
             className="text-sm font-medium"

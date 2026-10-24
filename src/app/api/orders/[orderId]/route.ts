@@ -1,17 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import type { OrderStatus, PaymentStatus } from "@prisma/client";
+import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { getAuth } from "@/lib/auth";
 import { restoreStock } from "@/services/inventory.service";
 
-const PAYMENT_STATUSES = ["PENDING", "PAID", "FAILED", "REFUNDED"] as const;
-const ORDER_STATUSES = [
+// නීති කඩවුණාම යවන error එක (status code එකත් එක්ක)
+class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+const ORDER_STATUSES: OrderStatus[] = [
   "PENDING",
   "CONFIRMED",
   "PROCESSING",
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",
-] as const;
+];
+const PAYMENT_STATUSES: PaymentStatus[] = [
+  "PENDING",
+  "PAID",
+  "FAILED",
+  "REFUNDED",
+];
+
+// Order එකට මාරු වෙන්න පුළුවන් ඊළඟ තත්වයන්
+const ORDER_FLOW: Record<OrderStatus, OrderStatus[]> = {
+  PENDING: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["PROCESSING", "CANCELLED"],
+  PROCESSING: ["SHIPPED", "CANCELLED"],
+  SHIPPED: ["DELIVERED"],
+  DELIVERED: [],
+  CANCELLED: [],
+};
+
+// Payment එකට මාරු වෙන්න පුළුවන් ඊළඟ තත්වයන්
+const PAYMENT_FLOW: Record<PaymentStatus, PaymentStatus[]> = {
+  PENDING: ["PAID", "FAILED"],
+  FAILED: ["PENDING", "PAID"],
+  PAID: ["REFUNDED"],
+  REFUNDED: [],
+};
 
 type Params = Promise<{ orderId: string }>;
 
@@ -37,22 +71,12 @@ export async function PATCH(
     const { orderId } = await params;
     const body = await request.json();
 
-    const paymentStatus = body.paymentStatus as
-      | (typeof PAYMENT_STATUSES)[number]
-      | undefined;
-    const orderStatus = body.orderStatus as
-      | (typeof ORDER_STATUSES)[number]
-      | undefined;
+    const orderStatus = body.orderStatus as OrderStatus | undefined;
+    const paymentStatus = body.paymentStatus as PaymentStatus | undefined;
 
-    if (!paymentStatus && !orderStatus) {
+    if (!orderStatus && !paymentStatus) {
       return NextResponse.json(
         { message: "Nothing to update" },
-        { status: 400 },
-      );
-    }
-    if (paymentStatus && !PAYMENT_STATUSES.includes(paymentStatus)) {
-      return NextResponse.json(
-        { message: "Invalid payment status" },
         { status: 400 },
       );
     }
@@ -62,72 +86,146 @@ export async function PATCH(
         { status: 400 },
       );
     }
+    if (paymentStatus && !PAYMENT_STATUSES.includes(paymentStatus)) {
+      return NextResponse.json(
+        { message: "Invalid payment status" },
+        { status: 400 },
+      );
+    }
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
         include: { items: true, payment: true },
       });
-      if (!order) throw new Error("NOT_FOUND");
+      if (!order) throw new ApiError(404, "Order not found");
+      const payment = order.payment;
 
-      // Cancel karapu order eka aye open karanna baha (stock aye adu karanna wenawa)
-      if (
-        order.status === "CANCELLED" &&
-        orderStatus &&
-        orderStatus !== "CANCELLED"
-      ) {
-        throw new Error("ORDER_CANCELLED");
+      // ===== 1) Payment වෙනස්කම පරීක්ෂා කරනවා =====
+      if (paymentStatus) {
+        if (!payment)
+          throw new ApiError(400, "This order has no payment record");
+
+        if (paymentStatus !== payment.status) {
+          if (!PAYMENT_FLOW[payment.status].includes(paymentStatus)) {
+            throw new ApiError(
+              400,
+              `Payment cannot change from ${payment.status} to ${paymentStatus}`,
+            );
+          }
+          // Card ගෙවීම් තහවුරු වෙන්නේ PayHere notification එකෙන් විතරයි
+          if (
+            payment.method === "CARD" &&
+            (paymentStatus === "PAID" || paymentStatus === "FAILED")
+          ) {
+            throw new ApiError(
+              400,
+              "Card payments are confirmed automatically by PayHere and cannot be changed manually.",
+            );
+          }
+        }
       }
 
-      // Payment eka PAID karama, order eka PENDING nam CONFIRMED karanawa
-      let nextStatus = orderStatus;
+      // ===== 2) Order වෙනස්කම පරීක්ෂා කරනවා =====
       if (
-        !nextStatus &&
+        orderStatus &&
+        orderStatus !== order.status &&
+        !ORDER_FLOW[order.status].includes(orderStatus)
+      ) {
+        throw new ApiError(
+          400,
+          `Order cannot change from ${order.status} to ${orderStatus}`,
+        );
+      }
+
+      // ===== 3) අවසාන තත්වයන් තීරණය කරනවා =====
+      let nextOrder: OrderStatus = orderStatus ?? order.status;
+      let nextPayment: PaymentStatus | undefined =
+        paymentStatus ?? payment?.status;
+
+      // Payment PAID කළාම PENDING order එක ඉබේම CONFIRMED
+      if (
+        !orderStatus &&
         paymentStatus === "PAID" &&
         order.status === "PENDING"
       ) {
-        nextStatus = "CONFIRMED";
+        nextOrder = "CONFIRMED";
+      }
+      // COD order එක DELIVERED කළාම සල්ලි ලැබුණා කියලා PAID
+      if (
+        nextOrder === "DELIVERED" &&
+        order.status !== "DELIVERED" &&
+        payment?.method === "CASH_ON_DELIVERY" &&
+        nextPayment === "PENDING"
+      ) {
+        nextPayment = "PAID";
       }
 
-      if (paymentStatus && order.payment) {
-        await tx.payment.update({
-          where: { orderId },
+      // ===== 4) Order සහ payment එකිනෙකට බලපාන නීති =====
+      const cancelling =
+        nextOrder === "CANCELLED" && order.status !== "CANCELLED";
+
+      if (nextOrder === "CANCELLED" && paymentStatus === "PAID") {
+        throw new ApiError(
+          400,
+          "A cancelled order cannot be marked as paid. Refund it instead.",
+        );
+      }
+      if (cancelling && nextPayment === "PAID") {
+        throw new ApiError(
+          400,
+          'This order is already paid. To cancel it, also send paymentStatus: "REFUNDED".',
+        );
+      }
+
+      // ===== 5) Database එකට ලියනවා (වෙන කෙනෙක් ඒ අතරේ වෙනස් කළා නම් 409) =====
+      if (payment && nextPayment && nextPayment !== payment.status) {
+        const p = await tx.payment.updateMany({
+          where: { id: payment.id, status: payment.status },
           data: {
-            status: paymentStatus,
-            ...(paymentStatus === "PAID" ? { paidAt: new Date() } : {}),
+            status: nextPayment,
+            ...(nextPayment === "PAID" ? { paidAt: new Date() } : {}),
           },
         });
+        if (p.count === 0) {
+          throw new ApiError(
+            409,
+            "Payment was changed by someone else. Refresh and try again.",
+          );
+        }
       }
 
-      // Cancel: "claim" karala stock aye ekathu karanawa (ekapaarak witharai, method ekata balanne na)
-      if (nextStatus === "CANCELLED") {
-        const claimed = await tx.order.updateMany({
-          where: { id: orderId, status: { not: "CANCELLED" } },
-          data: { status: "CANCELLED" },
+      if (nextOrder !== order.status) {
+        const o = await tx.order.updateMany({
+          where: { id: orderId, status: order.status },
+          data: { status: nextOrder },
         });
-        if (claimed.count === 1) await restoreStock(tx, order.items);
+        if (o.count === 0) {
+          throw new ApiError(
+            409,
+            "Order was changed by someone else. Refresh and try again.",
+          );
+        }
+        // Cancel කළාම stock ආපහු එකතු කරනවා (ඉහළ claim එක ඇතුළේ නිසා එක පාරයි)
+        if (cancelling) await restoreStock(tx, order.items);
       }
 
-      return tx.order.update({
+      return tx.order.findUniqueOrThrow({
         where: { id: orderId },
-        data: nextStatus ? { status: nextStatus } : {},
         include: { payment: true },
       });
-    });
+    }, TX_OPTIONS);
 
     return NextResponse.json({
-      orderId: updated.id,
-      orderStatus: updated.status,
-      paymentStatus: updated.payment?.status,
+      orderId: result.id,
+      orderStatus: result.status,
+      paymentStatus: result.payment?.status,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "NOT_FOUND") {
-      return NextResponse.json({ message: "Order not found" }, { status: 404 });
-    }
-    if (error instanceof Error && error.message === "ORDER_CANCELLED") {
+    if (error instanceof ApiError) {
       return NextResponse.json(
-        { message: "A cancelled order cannot be reopened" },
-        { status: 400 },
+        { message: error.message },
+        { status: error.status },
       );
     }
     console.error("PATCH /api/orders/[orderId] error:", error);
