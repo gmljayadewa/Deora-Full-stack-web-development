@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
   try {
     const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET;
     const ownMerchantId = process.env.PAYHERE_MERCHANT_ID;
+
     if (!merchantSecret || !ownMerchantId) {
       console.error("PayHere env variables are missing");
       return NextResponse.json(
@@ -26,14 +27,13 @@ export async function POST(req: NextRequest) {
     const amount = get("payhere_amount");
     const currency = get("payhere_currency");
     const statusCode = get("status_code");
-    const md5sig = get("md5sig");
+    const md5sig = get("md5sig").toUpperCase();
     const paymentId = get("payment_id");
 
     if (!orderId || !md5sig) {
       return NextResponse.json({ error: "Bad request" }, { status: 400 });
     }
 
-    // 1) Signature verify (request eka PayHere eken da kiyala)
     const localSig = md5Upper(
       merchantId +
         orderId +
@@ -42,98 +42,190 @@ export async function POST(req: NextRequest) {
         statusCode +
         md5Upper(merchantSecret),
     );
-    if (localSig !== md5sig.toUpperCase() || merchantId !== ownMerchantId) {
+
+    if (
+      merchantId !== ownMerchantId ||
+      !/^[A-F0-9]{32}$/.test(md5sig) ||
+      localSig !== md5sig
+    ) {
       console.error("PayHere signature mismatch");
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    // 2) Payment eka hoyala, amount / currency / method check
     const payment = await prisma.payment.findUnique({
       where: { orderId },
       include: { order: { include: { items: true } } },
     });
+
     if (!payment) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
+
     if (payment.method !== "CARD") {
       return NextResponse.json(
         { error: "Not a card payment" },
         { status: 400 },
       );
     }
+
+    const receivedAmount = Number(amount);
+    const expectedAmount = Number(payment.amount);
+
     if (
+      !Number.isFinite(receivedAmount) ||
+      !Number.isFinite(expectedAmount) ||
+      receivedAmount <= 0 ||
       currency !== "LKR" ||
-      Number(amount).toFixed(2) !== Number(payment.amount).toFixed(2)
+      receivedAmount.toFixed(2) !== expectedAmount.toFixed(2)
     ) {
-      console.error("PayHere amount or currency mismatch for order", orderId);
+      console.error("PayHere amount or currency mismatch", orderId);
       return NextResponse.json({ error: "Amount mismatch" }, { status: 400 });
     }
 
-    // status_code: 2 = success, 0 = pending, -1 = cancelled, -2 = failed, -3 = chargeback
     if (statusCode === "2") {
       if (!paymentId) {
-        console.error("PayHere success without payment_id for order", orderId);
         return NextResponse.json(
           { error: "Missing payment id" },
           { status: 400 },
         );
       }
 
-      await prisma.$transaction(async (tx) => {
-        // "Claim": ekama welawe notifications 2k awath, ekakata witharai count = 1
+      const result = await prisma.$transaction(async (tx) => {
+        const confirmed = await tx.order.updateMany({
+          where: { id: orderId, status: "PENDING" },
+          data: { status: "CONFIRMED" },
+        });
+
+        if (confirmed.count === 0) {
+          const current = await tx.order.findUnique({
+            where: { id: orderId },
+            include: { payment: true },
+          });
+
+          if (
+            current?.status === "CONFIRMED" &&
+            current.payment?.status === "PAID" &&
+            current.payment.transactionId === paymentId
+          ) {
+            return "DUPLICATE";
+          }
+
+          if (current?.status === "CANCELLED") {
+            if (current.payment?.status === "REFUNDED") {
+              return "ALREADY_REFUNDED";
+            }
+
+            if (
+              current.payment?.status === "PAID" &&
+              current.payment.transactionId === paymentId
+            ) {
+              console.error(
+                "PAYMENT_AFTER_CANCEL: refund review required",
+                orderId,
+              );
+              return "REFUND_REVIEW";
+            }
+
+            const captured = await tx.payment.updateMany({
+              where: {
+                orderId,
+                status: { in: ["PENDING", "FAILED"] },
+              },
+              data: {
+                status: "PAID",
+                transactionId: paymentId,
+                paidAt: new Date(),
+              },
+            });
+
+            if (captured.count !== 1) {
+              throw new Error("PAYMENT_STATE_CONFLICT_AFTER_CANCEL");
+            }
+
+            console.error(
+              "PAYMENT_AFTER_CANCEL: refund review required",
+              orderId,
+            );
+
+            return "REFUND_REVIEW";
+          }
+
+          return "NOT_PROCESSED";
+        }
+
         const claimed = await tx.payment.updateMany({
-          where: { orderId, status: { in: ["PENDING", "FAILED"] } },
+          where: {
+            orderId,
+            status: { in: ["PENDING", "FAILED"] },
+          },
           data: {
             status: "PAID",
             transactionId: paymentId,
             paidAt: new Date(),
           },
         });
-        if (claimed.count === 0) return; // duplicate notification
 
-        const confirmed = await tx.order.updateMany({
-          where: { id: orderId, status: "PENDING" },
-          data: { status: "CONFIRMED" },
-        });
-        if (confirmed.count === 0) {
-          // Order eka kalinma cancel wela (stock aye ekathu wela). Mudal awa: admin refund karanna ona.
-          console.error(
-            "PAYMENT_AFTER_CANCEL: refund needed for order",
-            orderId,
-          );
-          return;
+        if (claimed.count !== 1) {
+          throw new Error("PAYMENT_STATE_CONFLICT");
         }
 
-        // Paid items customer ge saved cart eken ain karanna
         await tx.cartItem.deleteMany({
           where: {
             cart: { userId: payment.order.userId },
-            productId: { in: payment.order.items.map((i) => i.productId) },
+            productId: {
+              in: payment.order.items.map((item) => item.productId),
+            },
           },
         });
+
+        return "PROCESSED";
       }, TX_OPTIONS);
+
+      if (result === "REFUND_REVIEW") {
+        return NextResponse.json({ received: true });
+      }
+
+      if (result === "NOT_PROCESSED") {
+        console.error(
+          "PAYHERE_SUCCESS_NOT_PROCESSED: order state conflict",
+          orderId,
+        );
+        return NextResponse.json(
+          { error: "Order state conflict; review required" },
+          { status: 409 },
+        );
+      }
     } else if (statusCode === "-1" || statusCode === "-2") {
       await prisma.$transaction(async (tx) => {
-        const claimed = await tx.payment.updateMany({
-          where: { orderId, status: "PENDING" },
-          data: { status: "FAILED" },
-        });
-        if (claimed.count === 0) return; // already handled
-
         const cancelled = await tx.order.updateMany({
-          where: { id: orderId, status: { not: "CANCELLED" } },
+          where: { id: orderId, status: "PENDING" },
           data: { status: "CANCELLED" },
         });
-        // Stock aye ekathu karanne ekapaarak witharai
-        if (cancelled.count === 1) {
-          await restoreStock(tx, payment.order.items);
+
+        if (cancelled.count === 0) {
+          return;
         }
+
+        const failed = await tx.payment.updateMany({
+          where: {
+            orderId,
+            status: "PENDING",
+          },
+          data: { status: "FAILED" },
+        });
+
+        if (failed.count !== 1) {
+          throw new Error("PAYMENT_STATE_CONFLICT");
+        }
+
+        await restoreStock(tx, payment.order.items);
       }, TX_OPTIONS);
     } else if (statusCode === "-3") {
-      // Chargeback: danata log witharai (payment status enum eke CHARGEBACK nae)
-      console.error("PAYHERE_CHARGEBACK for order", orderId);
+      console.error("PAYHERE_CHARGEBACK: manual review required", {
+        orderId,
+        paymentId,
+      });
     }
-    // 0 (pending): nothing to do
 
     return NextResponse.json({ received: true });
   } catch (error) {

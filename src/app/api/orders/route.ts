@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, TX_OPTIONS } from "@/lib/prisma";
-import { getUserId } from "@/lib/auth";
+import { getAuth, getUserId } from "@/lib/auth";
 import { DELIVERY_FEE } from "@/lib/shipping";
 import { decrementStock, OutOfStockError } from "@/services/inventory.service";
 
@@ -14,6 +14,66 @@ const MAX_LINES = 50;
 const MAX_QTY = 99;
 
 type CartLine = { productId: string; quantity: number };
+
+export async function GET(request: NextRequest) {
+  try {
+    const auth = getAuth(request);
+
+    if (!auth) {
+      return NextResponse.json(
+        { message: "Unauthorized. Please log in." },
+        { status: 401 },
+      );
+    }
+
+    if (auth.role !== "ADMIN") {
+      return NextResponse.json(
+        { message: "Admin access only." },
+        { status: 403 },
+      );
+    }
+
+    const orders = await prisma.order.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 100,
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        payment: {
+          select: {
+            method: true,
+            status: true,
+            amount: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ orders });
+  } catch (error) {
+    console.error("GET /api/orders error:", error);
+
+    return NextResponse.json(
+      { message: "Failed to load orders." },
+      { status: 500 },
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

@@ -4,6 +4,7 @@ import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { generatePayHereHash } from "@/lib/payhere";
 import { DELIVERY_FEE } from "@/lib/shipping";
 import { decrementStock, OutOfStockError } from "@/services/inventory.service";
+import { CARD_PAYMENTS_ENABLED } from "@/lib/features";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 const MAX_LINES = 50;
@@ -14,6 +15,13 @@ type CartLine = { productId: string; quantity: number };
 export async function POST(request: NextRequest) {
   try {
     let userId: string;
+
+    if (!CARD_PAYMENTS_ENABLED) {
+      return NextResponse.json(
+        { message: "Card payments are not available yet." },
+        { status: 403 },
+      );
+    }
 
     // Reading and checking the token
     const token = request.cookies.get("token")?.value;

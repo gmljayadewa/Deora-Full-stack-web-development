@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { CARD_PAYMENTS_ENABLED } from "@/lib/features";
 import {
   X,
   ChevronRight,
@@ -99,7 +100,9 @@ export default function BuyNowButton({
             </h2>
 
             <div className="mt-4 flex flex-col gap-3">
-              {METHODS.map((m) => (
+              {METHODS.filter(
+                (m) => m.id !== "CARD" || CARD_PAYMENTS_ENABLED,
+              ).map((m) => (
                 <button
                   type="button"
                   key={m.id}

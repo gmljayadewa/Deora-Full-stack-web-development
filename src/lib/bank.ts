@@ -1,6 +1,6 @@
 export const BANK_DETAILS = {
-  bank: "YOUR BANK NAME",
-  branch: "YOUR BRANCH",
-  accountName: "YOUR ACCOUNT NAME",
-  accountNumber: "YOUR ACCOUNT NUMBER",
+  bank: "Bank of Ceylon",
+  branch: "Gonapala",
+  accountName: "K W S W Kariyawasam",
+  accountNumber: "83596061",
 };

@@ -6,6 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { DELIVERY_FEE } from "../../lib/shipping";
 import type { Product } from "@/lib/products";
+import { CARD_PAYMENTS_ENABLED } from "@/lib/features";
 import {
   loadBuyNow,
   clearBuyNow,
@@ -35,7 +36,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const m = new URLSearchParams(window.location.search).get("method");
-    if (m && m in PAY_LABELS) {
+    if (m && m in PAY_LABELS && (m !== "CARD" || CARD_PAYMENTS_ENABLED)) {
       setMethod(m as PayMethod);
       setBuyNow(loadBuyNow());
     } else {
@@ -264,7 +265,9 @@ export default function CheckoutPage() {
       ? `Continue to ${PAY_LABELS[method]}`
       : "Choose a payment method";
 
-  const methods = Object.keys(PAY_LABELS) as PayMethod[];
+  const methods = (Object.keys(PAY_LABELS) as PayMethod[]).filter(
+    (m) => m !== "CARD" || CARD_PAYMENTS_ENABLED,
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">

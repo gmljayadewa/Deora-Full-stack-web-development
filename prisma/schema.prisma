@@ -220,7 +220,7 @@ model Inventory {
   id        String   @id @default(cuid())
   productId String   @unique
 
-  quantity  Int      @default(0)
+ quantity  Int      @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -228,6 +228,27 @@ model Inventory {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("inventory")
+}
+
+
+model BlogPost {
+  id          String          @id @default(cuid())
+  title       String
+  slug        String          @unique
+  excerpt     String
+  date        DateTime        @default(now())
+  readTime    String          @default("2 min read")
+  image       String?
+  sections    Json
+  contentType BlogContentType @default(BLOG)
+  videoUrl    String?
+  published   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([published, date])
+  @@index([contentType])
+  @@map("blog_posts")
 }
 
 
@@ -263,3 +284,7 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum BlogContentType {
+  BLOG
+  VLOG
+}
