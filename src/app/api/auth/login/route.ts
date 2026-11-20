@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { rateLimit, getRetryAfterSeconds, getClientIp } from "@/lib/rate-limit";
 // "why jsonwebtoken?" — JWT (JSON Web Token) කියන්නෙ user info (id, role)
 // encode කරලා, digitally sign කරපු string එකක්. Server එකට ඒක verify
 // කරන්ඩ පුලුවන් (secret key එකෙන්), ඒත් client එකට එය tamper (edit) කරන්ඩ
@@ -25,6 +26,36 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: "email and password are required!" },
         { status: 400 },
+      );
+    }
+
+    // ==============================
+    // F02 fix: rate limiting
+    // ==============================
+    // "why two keys (ip AND email)?" — IP ekatama limit kaloth, kenek
+    // many IP walin (proxy/botnet) ekama email ekata password guess
+    // karanna try karanoth, eka block wenne na. Email ekatama limit
+    // kaloth, dan IP ekak gani godak account ta try karanoth eka block
+    // wenne na. Dekema danawa — ewayin eka ANDAMAK block unath, login
+    // eka reject wenawa.
+    const ip = getClientIp(request);
+    const ipKey = `login:ip:${ip}`;
+    const emailKey = `login:email:${email}`;
+
+    // 10 attempts / 10 minutes per IP, 5 attempts / 10 minutes per email —
+    // email eka athulath account ekak targeted brute-force ekaka risk
+    // eka wediyen thiyena nisa, eka ta limit eka tightai.
+    const ipAllowed = rateLimit(ipKey, 10, 10 * 60_000);
+    const emailAllowed = rateLimit(emailKey, 5, 10 * 60_000);
+
+    if (!ipAllowed || !emailAllowed) {
+      const retryAfter = Math.max(
+        getRetryAfterSeconds(ipKey),
+        getRetryAfterSeconds(emailKey),
+      );
+      return NextResponse.json(
+        { message: "Too many login attempts. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
       );
     }
 

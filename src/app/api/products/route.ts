@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, authErrorResponse } from "@/lib/require-admin";
 
 // GET: public store walata active products witharai
 export async function GET() {
@@ -17,8 +18,17 @@ export async function GET() {
   }
 }
 
-// POST: product ekak hadanawa (proxy eken ADMIN witharai)
+// POST: product ekak hadanawa (ADMIN witharai)
 export async function POST(request: Request) {
+  // F01 fix: "proxy eken ADMIN witharai" kiyala comment eka tibba — proxy.ts
+  // eka hari widiyatama run wenawa, eth eke check eka token eke pana `role`
+  // field eka witharak trust kala (database eke role eka pasuwa change
+  // unath, token eka expire wenakan pana access eka tibenawa). Dan ADMIN
+  // decision eka database eken ma check karana me check ekatama dila.
+  const auth = await requireAdmin();
+  const errorResponse = authErrorResponse(auth);
+  if (errorResponse) return errorResponse;
+
   try {
     const body = await request.json();
 

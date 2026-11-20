@@ -1,41 +1,15 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, authErrorResponse } from "@/lib/require-admin";
 
 export async function GET() {
+  // F01 fix: database eken ma current role eka check karanawa (token
+  // eke pana role field eka witharak trust karanne na).
+  const auth = await requireAdmin();
+  const errorResponse = authErrorResponse(auth);
+  if (errorResponse) return errorResponse;
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { message: "Unauthorized — please log in" },
-        { status: 401 },
-      );
-    }
-
-    let decoded: { id: string; role: string };
-
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-        id: string;
-        role: string;
-      };
-    } catch {
-      return NextResponse.json(
-        { message: "Invalid or expired token" },
-        { status: 401 },
-      );
-    }
-
-    if (decoded.role !== "ADMIN") {
-      return NextResponse.json(
-        { message: "Forbidden — admin access required" },
-        { status: 403 },
-      );
-    }
-
     const categories = await prisma.category.findMany({
       orderBy: {
         name: "asc",

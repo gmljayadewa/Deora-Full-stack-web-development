@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, authErrorResponse } from "@/lib/require-admin";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // F01 critical fix: middleware eka (proxy.ts) actual widiyata run wune
+  // naha, ewa nisa me route eka open wela tibba. methanama check eka.
+  const auth = await requireAdmin();
+  const errorResponse = authErrorResponse(auth);
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -55,10 +62,14 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }, // ← Promise<> එකතු කරන්ඩ
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdmin();
+  const errorResponse = authErrorResponse(auth);
+  if (errorResponse) return errorResponse;
+
   try {
-    const { id } = await params; // ← await කරන්ඩ
+    const { id } = await params;
 
     await prisma.product.delete({
       where: { id, isActive: false },
