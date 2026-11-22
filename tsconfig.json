@@ -30,5 +30,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+ "exclude": [
+  "node_modules",
+  "deora-blog-admin-backup-20261120-174039"
+ ]
 }
