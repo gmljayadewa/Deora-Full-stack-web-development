@@ -3,6 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 
+export const dynamic = "force-dynamic";
+
 const money = (value: number) =>
   `LKR ${value.toLocaleString("en-LK", {
     minimumFractionDigits: 2,

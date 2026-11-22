@@ -12,6 +12,7 @@ type AuthSuccess = {
   user: {
     id: string;
     role: string;
+    sessionVersion: number;
   };
 };
 
@@ -55,12 +56,29 @@ export async function requireAuth(): Promise<AuthResult> {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, role: true },
+      select: {
+        id: true,
+        role: true,
+        sessionVersion: true,
+      },
     });
 
     if (!user) {
       return {
         error: "Unauthorized — please log in",
+        status: 401,
+      };
+    }
+
+    if (
+      !("sessionVersion" in decoded) ||
+      typeof decoded.sessionVersion !== "number" ||
+      !Number.isSafeInteger(decoded.sessionVersion) ||
+      decoded.sessionVersion < 0 ||
+      decoded.sessionVersion !== user.sessionVersion
+    ) {
+      return {
+        error: "Session expired — please log in again",
         status: 401,
       };
     }

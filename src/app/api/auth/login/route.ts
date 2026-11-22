@@ -92,6 +92,7 @@ export async function POST(request: Request) {
     setAuthCookie(response, {
       id: existingUser.id,
       role: existingUser.role,
+      sessionVersion: existingUser.sessionVersion,
     });
 
     return response;

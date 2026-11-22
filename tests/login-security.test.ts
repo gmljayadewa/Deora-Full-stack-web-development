@@ -48,6 +48,7 @@ const validUser = {
   email: "test@example.com",
   password: "hashed-password",
   role: "CUSTOMER",
+  sessionVersion: 0,
   emailVerified: new Date(),
 };
 
@@ -73,6 +74,7 @@ describe("Login security", () => {
     expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       id: "user-1",
       role: "CUSTOMER",
+      sessionVersion: 0,
     });
   });
 

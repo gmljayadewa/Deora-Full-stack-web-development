@@ -38,11 +38,13 @@ beforeEach(() => {
   mocks.verify.mockReturnValue({
     id: "user-1",
     role: "ADMIN",
+    sessionVersion: 0,
   });
 
   mocks.findUnique.mockResolvedValue({
     id: "user-1",
     role: "ADMIN",
+    sessionVersion: 0,
   });
 });
 
@@ -86,10 +88,69 @@ describe("Authentication security", () => {
     expect(result).toMatchObject({ status: 401 });
   });
 
+  it("rejects a JWT after the user's session version changes", async () => {
+    mocks.verify.mockReturnValue({
+      id: "user-1",
+      role: "CUSTOMER",
+      sessionVersion: 0,
+    });
+
+    mocks.findUnique.mockResolvedValue({
+      id: "user-1",
+      role: "CUSTOMER",
+      sessionVersion: 1,
+    });
+
+    const result = await requireAuth();
+
+    expect(result).toMatchObject({ status: 401 });
+  });
+
+  it("allows a JWT with the current session version", async () => {
+    mocks.verify.mockReturnValue({
+      id: "user-1",
+      role: "CUSTOMER",
+      sessionVersion: 2,
+    });
+
+    mocks.findUnique.mockResolvedValue({
+      id: "user-1",
+      role: "CUSTOMER",
+      sessionVersion: 2,
+    });
+
+    const result = await requireAuth();
+
+    expect(result).toEqual({
+      user: {
+        id: "user-1",
+        role: "CUSTOMER",
+        sessionVersion: 2,
+      },
+    });
+  });
+
+  it("rejects JWTs without a session version", async () => {
+    mocks.verify.mockReturnValue({
+      id: "user-1",
+      role: "CUSTOMER",
+    });
+
+    mocks.findUnique.mockResolvedValue({
+      id: "user-1",
+      role: "CUSTOMER",
+    });
+
+    const result = await requireAuth();
+
+    expect(result).toMatchObject({ status: 401 });
+  });
+
   it("rejects customers accessing admin routes", async () => {
     mocks.findUnique.mockResolvedValue({
       id: "user-1",
       role: "CUSTOMER",
+      sessionVersion: 0,
     });
 
     const result = await requireAdmin();
@@ -104,6 +165,7 @@ describe("Authentication security", () => {
       user: {
         id: "user-1",
         role: "ADMIN",
+        sessionVersion: 0,
       },
     });
   });
@@ -112,11 +174,13 @@ describe("Authentication security", () => {
     mocks.verify.mockReturnValue({
       id: "user-1",
       role: "ADMIN",
+      sessionVersion: 0,
     });
 
     mocks.findUnique.mockResolvedValue({
       id: "user-1",
       role: "CUSTOMER",
+      sessionVersion: 0,
     });
 
     const result = await requireAdmin();

@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { requireAuth, authErrorResponse } from "@/lib/require-admin";
 import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import { generatePayHereHash } from "@/lib/payhere";
 import { DELIVERY_FEE } from "@/lib/shipping";
 import { decrementStock, OutOfStockError } from "@/services/inventory.service";
 import { CARD_PAYMENTS_ENABLED } from "@/lib/features";
 
-const JWT_SECRET = process.env.JWT_SECRET!;
 const MAX_LINES = 50;
 const MAX_QTY = 99;
 
@@ -14,8 +13,6 @@ type CartLine = { productId: string; quantity: number };
 
 export async function POST(request: NextRequest) {
   try {
-    let userId: string;
-
     if (!CARD_PAYMENTS_ENABLED) {
       return NextResponse.json(
         { message: "Card payments are not available yet." },
@@ -23,31 +20,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reading and checking the token
-    const token = request.cookies.get("token")?.value;
-    if (!token) {
+    const auth = await requireAuth();
+    const authError = authErrorResponse(auth);
+
+    if (authError) return authError;
+
+    if ("error" in auth) {
       return NextResponse.json(
-        { message: "Unauthorized-Please log in" },
-        { status: 401 },
+        { message: auth.error },
+        { status: auth.status },
       );
     }
 
-    try {
-      const decoded = jwt.verify(token, JWT_SECRET) as {
-        id: string;
-        role: string;
-      };
-      userId = decoded.id;
-    } catch {
-      return NextResponse.json(
-        { message: "Invalid or expired token" },
-        { status: 401 },
-      );
-    }
+    const userId = auth.user.id;
 
     // PayHere settings must exist before we create any order
     const merchantId = process.env.PAYHERE_MERCHANT_ID;
     const merchantSecret = process.env.PAYHERE_MERCHANT_SECRET;
+
     if (!merchantId || !merchantSecret) {
       console.error("PayHere env variables are missing");
       return NextResponse.json(

@@ -24,6 +24,7 @@ describe("Authentication cookie security", () => {
     setAuthCookie(response, {
       id: "user-123",
       role: "CUSTOMER",
+      sessionVersion: 0,
     });
 
     const token = response.cookies.get("token")?.value;
@@ -37,6 +38,7 @@ describe("Authentication cookie security", () => {
 
     expect(decoded.id).toBe("user-123");
     expect(decoded.role).toBe("CUSTOMER");
+    expect(decoded.sessionVersion).toBe(0);
   });
 
   it("sets JWT expiration to seven days", () => {
@@ -45,6 +47,7 @@ describe("Authentication cookie security", () => {
     setAuthCookie(response, {
       id: "user-123",
       role: "CUSTOMER",
+      sessionVersion: 0,
     });
 
     const token = response.cookies.get("token")?.value;
@@ -63,6 +66,7 @@ describe("Authentication cookie security", () => {
     setAuthCookie(response, {
       id: "user-123",
       role: "CUSTOMER",
+      sessionVersion: 0,
     });
 
     const cookie = response.cookies.get("token");
@@ -92,6 +96,7 @@ describe("Authentication cookie security", () => {
     setAuthCookie(response, {
       id: "user-123",
       role: "CUSTOMER",
+      sessionVersion: 0,
     });
 
     const token = response.cookies.get("token")!.value;

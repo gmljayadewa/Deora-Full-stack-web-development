@@ -175,7 +175,10 @@ export async function PUT(request: Request) {
 
       await tx.user.update({
         where: { id: record.userId },
-        data: { password: hashed },
+        data: {
+          password: hashed,
+          sessionVersion: { increment: 1 },
+        },
       });
 
       // User ekata thibba wena reset tokens (thiyenawanam) ain karanawa.
