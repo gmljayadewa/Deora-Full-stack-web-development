@@ -14,7 +14,6 @@ import {
   PAY_DESCRIPTIONS,
   type PayMethod,
 } from "@/lib/buyNow";
-
 function formatPrice(value: number): string {
   return `Rs. ${value.toLocaleString("en-LK", {
     minimumFractionDigits: 2,
@@ -69,6 +68,13 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const paymentRef = useRef<HTMLDivElement>(null);
+
+  const submittingRef = useRef(false);
+
+  const checkoutAttemptRef = useRef<{
+    fingerprint: string;
+    key: string;
+  } | null>(null);
   // Order eka dapu passe cart eka hisa wenakota shop ekata redirect wena eka nawaththanna
   const orderPlaced = useRef(false);
 
@@ -80,7 +86,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (loading) return; // guard against double-click
+    if (submittingRef.current || loading) return; // guard against double-click
 
     if (!method) {
       setMethodError("Please choose a payment method");
@@ -91,6 +97,7 @@ export default function CheckoutPage() {
       });
       return;
     }
+    submittingRef.current = true;
 
     setLoading(true);
 
@@ -103,18 +110,36 @@ export default function CheckoutPage() {
     try {
       // ===== COD / Bank Transfer / WhatsApp =====
       if (method !== "CARD") {
+        const orderPayload = {
+          paymentMethod: method,
+          customerName: formData.fullName,
+          phone: formData.phone,
+          note: formData.note,
+          shippingAddress,
+          items: lineItems,
+        };
+
+        const payloadFingerprint = JSON.stringify(orderPayload);
+
+        if (
+          !checkoutAttemptRef.current ||
+          checkoutAttemptRef.current.fingerprint !== payloadFingerprint
+        ) {
+          checkoutAttemptRef.current = {
+            fingerprint: payloadFingerprint,
+            key: crypto.randomUUID(),
+          };
+        }
+
+        const idempotencyKey = checkoutAttemptRef.current.key;
         const res = await fetch("/api/orders", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
           credentials: "include",
-          body: JSON.stringify({
-            paymentMethod: method,
-            customerName: formData.fullName,
-            phone: formData.phone,
-            note: formData.note,
-            shippingAddress,
-            items: lineItems,
-          }),
+          body: JSON.stringify(orderPayload),
         });
 
         if (res.status === 401) {
@@ -252,6 +277,8 @@ export default function CheckoutPage() {
           : "Something went wrong. Please try again.",
       );
       setLoading(false);
+    } finally {
+      submittingRef.current = false;
     }
   };
 

@@ -161,7 +161,10 @@ model Order {
   user            User          @relation(fields: [userId], references: [id])
   items           OrderItem[]
   payment         Payment?
+  idempotencyKey  String? @db.VarChar(100)
+  idempotencyHash String? @db.VarChar(64)
 
+  @@unique([userId, idempotencyKey])
   @@index([userId])
   @@index([status])
   @@map("orders")

@@ -1,4 +1,7 @@
+import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+
 import { prisma, TX_OPTIONS } from "@/lib/prisma";
 import {
   requireAuth,
@@ -16,10 +19,188 @@ const METHOD_MAP = {
 
 const MAX_LINES = 50;
 const MAX_QTY = 99;
+const MAX_BODY_BYTES = 32 * 1024;
 
-type CartLine = { productId: string; quantity: number };
+type OrderItemInput = {
+  productId: string;
+  quantity: number;
+};
 
-export async function GET(request: NextRequest) {
+type OrderPayload = {
+  paymentMethod: keyof typeof METHOD_MAP;
+  shippingAddress: string;
+  customerName: string | null;
+  phone: string | null;
+  note: string | null;
+  items: OrderItemInput[];
+};
+
+type SavedOrder = {
+  id: string;
+  totalAmount: Prisma.Decimal;
+  idempotencyHash: string | null;
+};
+
+function jsonError(message: string, status: number) {
+  return NextResponse.json({ message }, { status });
+}
+
+function fingerprint(value: unknown): string {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function optionalText(
+  value: unknown,
+  maxLength: number,
+): string | null | undefined {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  if (trimmed.length > maxLength) {
+    return undefined;
+  }
+
+  return trimmed || null;
+}
+
+function validatePayload(
+  body: unknown,
+): { ok: true; payload: OrderPayload } | { ok: false; message: string } {
+  if (!isRecord(body)) {
+    return {
+      ok: false,
+      message: "Invalid request body",
+    };
+  }
+
+  if (
+    typeof body.paymentMethod !== "string" ||
+    !Object.prototype.hasOwnProperty.call(METHOD_MAP, body.paymentMethod)
+  ) {
+    return {
+      ok: false,
+      message: "Invalid payment method",
+    };
+  }
+
+  if (
+    typeof body.shippingAddress !== "string" ||
+    !body.shippingAddress.trim() ||
+    body.shippingAddress.length > 2000
+  ) {
+    return {
+      ok: false,
+      message: "Invalid shipping address",
+    };
+  }
+
+  const customerName = optionalText(body.customerName, 200);
+  const phone = optionalText(body.phone, 50);
+  const note = optionalText(body.note, 2000);
+
+  if (customerName === undefined || phone === undefined || note === undefined) {
+    return {
+      ok: false,
+      message: "Invalid customer details",
+    };
+  }
+
+  if (
+    !Array.isArray(body.items) ||
+    body.items.length === 0 ||
+    body.items.length > MAX_LINES
+  ) {
+    return {
+      ok: false,
+      message: "Invalid order items",
+    };
+  }
+
+  const wanted = new Map<string, number>();
+
+  for (const line of body.items) {
+    if (!isRecord(line)) {
+      return {
+        ok: false,
+        message: "Invalid cart item",
+      };
+    }
+
+    const { productId, quantity } = line;
+
+    if (
+      typeof productId !== "string" ||
+      !productId.trim() ||
+      typeof quantity !== "number" ||
+      !Number.isSafeInteger(quantity) ||
+      quantity < 1 ||
+      quantity > MAX_QTY
+    ) {
+      return {
+        ok: false,
+        message: "Invalid cart item",
+      };
+    }
+
+    const combined = (wanted.get(productId) ?? 0) + quantity;
+
+    if (combined > MAX_QTY) {
+      return {
+        ok: false,
+        message: "Quantity limit exceeded",
+      };
+    }
+
+    wanted.set(productId, combined);
+  }
+
+  const items = [...wanted.entries()]
+    .map(([productId, quantity]) => ({
+      productId,
+      quantity,
+    }))
+    .sort((a, b) => a.productId.localeCompare(b.productId));
+
+  return {
+    ok: true,
+    payload: {
+      paymentMethod: body.paymentMethod as keyof typeof METHOD_MAP,
+      shippingAddress: body.shippingAddress.trim(),
+      customerName,
+      phone,
+      note,
+      items,
+    },
+  };
+}
+
+function existingOrderResponse(order: SavedOrder, expectedHash: string) {
+  if (order.idempotencyHash !== expectedHash) {
+    return jsonError(
+      "Idempotency key reused with different order details",
+      409,
+    );
+  }
+
+  return NextResponse.json({
+    orderId: order.id,
+    total: Number(order.totalAmount),
+    duplicate: true,
+  });
+}
+
+export async function GET(_request: NextRequest) {
   try {
     const auth = await requireAdmin();
     const authError = authErrorResponse(auth);
@@ -61,10 +242,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("GET /api/orders error:", error);
 
-    return NextResponse.json(
-      { message: "Failed to load orders." },
-      { status: 500 },
-    );
+    return jsonError("Failed to load orders", 500);
   }
 }
 
@@ -76,141 +254,183 @@ export async function POST(request: NextRequest) {
     if (authError) return authError;
 
     if ("error" in auth) {
-      return NextResponse.json(
-        { message: auth.error },
-        { status: auth.status },
-      );
+      return jsonError(auth.error, auth.status);
     }
 
     const userId = auth.user.id;
 
-    const body = await request.json();
+    const key = request.headers.get("Idempotency-Key");
 
-    const method = METHOD_MAP[body.paymentMethod as keyof typeof METHOD_MAP];
-    if (!method) {
-      return NextResponse.json(
-        { message: "Invalid payment method" },
-        { status: 400 },
-      );
+    if (!key || key.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(key)) {
+      return jsonError("Invalid Idempotency-Key", 400);
     }
 
-    if (!body.shippingAddress) {
-      return NextResponse.json(
-        { message: "Shipping Address is required" },
-        { status: 400 },
-      );
+    const contentLength = request.headers.get("content-length");
+
+    if (contentLength !== null && Number(contentLength) > MAX_BODY_BYTES) {
+      return jsonError("Request body too large", 413);
     }
 
-    const items = body.items;
-    if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ message: "Cart is empty" }, { status: 400 });
-    }
-    if (items.length > MAX_LINES) {
-      return NextResponse.json({ message: "Too many items" }, { status: 400 });
-    }
+    let body: unknown;
 
-    // Same product twice = one line
-    const wanted = new Map<string, number>();
-    for (const line of items as CartLine[]) {
-      const qty = Number(line?.quantity);
-      if (
-        typeof line?.productId !== "string" ||
-        !Number.isInteger(qty) ||
-        qty < 1
-      ) {
-        return NextResponse.json(
-          { message: "Invalid cart item" },
-          { status: 400 },
-        );
+    try {
+      const raw = await request.text();
+
+      if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) {
+        return jsonError("Request body too large", 413);
       }
-      wanted.set(line.productId, (wanted.get(line.productId) ?? 0) + qty);
-    }
-    for (const qty of wanted.values()) {
-      if (qty > MAX_QTY) {
-        return NextResponse.json(
-          { message: "Quantity is too large" },
-          { status: 400 },
-        );
-      }
+
+      body = JSON.parse(raw);
+    } catch {
+      return jsonError("Invalid JSON body", 400);
     }
 
-    // Price eka hamadama DB eken
-    const products = await prisma.product.findMany({
-      where: { id: { in: [...wanted.keys()] } },
+    const validation = validatePayload(body);
+
+    if (!validation.ok) {
+      return jsonError(validation.message, 400);
+    }
+
+    const payload = validation.payload;
+    const method = METHOD_MAP[payload.paymentMethod];
+
+    const requestHash = fingerprint({
+      userId,
+      method,
+      shippingAddress: payload.shippingAddress,
+      customerName: payload.customerName,
+      phone: payload.phone,
+      note: payload.note,
+      items: payload.items,
     });
 
-    if (products.length !== wanted.size) {
-      return NextResponse.json(
-        {
-          message:
-            "Some products are no longer available. Please refresh your cart.",
+    const lookup = {
+      userId_idempotencyKey: {
+        userId,
+        idempotencyKey: key,
+      },
+    };
+
+    const existing = await prisma.order.findUnique({
+      where: lookup,
+    });
+
+    if (existing) {
+      return existingOrderResponse(existing, requestHash);
+    }
+
+    const products = await prisma.product.findMany({
+      where: {
+        id: {
+          in: payload.items.map((item) => item.productId),
         },
-        { status: 400 },
-      );
+      },
+    });
+
+    if (products.length !== payload.items.length) {
+      return jsonError("Product not found", 400);
     }
 
-    const hidden = products.find((p) => !p.isActive);
-    if (hidden) {
-      return NextResponse.json(
-        { message: `${hidden.name} is not available right now` },
-        { status: 400 },
-      );
+    if (products.some((product) => !product.isActive)) {
+      return jsonError("Product unavailable", 400);
     }
 
-    const lines = products.map((p) => ({
-      product: p,
-      quantity: wanted.get(p.id)!,
-    }));
+    const quantities = new Map(
+      payload.items.map((item) => [item.productId, item.quantity]),
+    );
+
+    const lines = products
+      .map((product) => ({
+        product,
+        quantity: quantities.get(product.id)!,
+      }))
+      .sort((a, b) => a.product.id.localeCompare(b.product.id));
 
     const itemsTotal = lines.reduce(
-      (sum, l) => sum + Number(l.product.price) * l.quantity,
+      (sum, line) => sum + Number(line.product.price) * line.quantity,
       0,
     );
+
     const totalAmount = itemsTotal + DELIVERY_FEE;
 
-    // Stock adu karala order eka hadanna: okkoma ekama transaction eke
-    let order;
     try {
-      order = await prisma.$transaction(async (tx) => {
-        for (const l of lines) {
-          await decrementStock(tx, l.product.id, l.quantity, l.product.name);
+      const order = await prisma.$transaction(async (tx) => {
+        for (const line of lines) {
+          await decrementStock(
+            tx,
+            line.product.id,
+            line.quantity,
+            line.product.name,
+          );
         }
 
         return tx.order.create({
           data: {
             userId,
-            customerName: body.customerName,
-            phone: body.phone,
-            note: body.note,
+            idempotencyKey: key,
+            idempotencyHash: requestHash,
+            customerName: payload.customerName,
+            phone: payload.phone,
+            note: payload.note,
             totalAmount,
-            shippingAddress: body.shippingAddress,
+            shippingAddress: payload.shippingAddress,
             status: "PENDING",
             items: {
-              create: lines.map((l) => ({
-                productId: l.product.id,
-                quantity: l.quantity,
-                price: l.product.price,
+              create: lines.map((line) => ({
+                productId: line.product.id,
+                quantity: line.quantity,
+                price: line.product.price,
               })),
             },
             payment: {
-              create: { amount: totalAmount, method, status: "PENDING" },
+              create: {
+                amount: totalAmount,
+                method,
+                status: "PENDING",
+              },
             },
           },
         });
       }, TX_OPTIONS);
-    } catch (e) {
-      if (e instanceof OutOfStockError) {
-        return NextResponse.json({ message: e.message }, { status: 400 });
-      }
-      throw e;
-    }
 
-    return NextResponse.json({ orderId: order.id, total: totalAmount });
+      return NextResponse.json({
+        orderId: order.id,
+        total: Number(order.totalAmount),
+        duplicate: false,
+      });
+    } catch (error) {
+      if (error instanceof OutOfStockError) {
+        return jsonError(error.message, 400);
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        const saved = await prisma.order.findUnique({
+          where: lookup,
+        });
+
+        if (saved) {
+          return existingOrderResponse(saved, requestHash);
+        }
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2034"
+      ) {
+        return jsonError(
+          "Concurrent transaction conflict. Retry using the same idempotency key.",
+          503,
+        );
+      }
+
+      throw error;
+    }
   } catch (error) {
     console.error("POST /api/orders error:", error);
-    return NextResponse.json(
-      { message: "Failed to place order" },
-      { status: 500 },
-    );
+
+    return jsonError("Failed to place order", 500);
   }
 }
