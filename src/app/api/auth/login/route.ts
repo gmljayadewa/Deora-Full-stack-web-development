@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { setAuthCookie } from "@/lib/auth-cookie";
 import { rateLimit, getRetryAfterSeconds, getClientIp } from "@/lib/rate-limit";
-// "why jsonwebtoken?" — JWT (JSON Web Token) කියන්නෙ user info (id, role)
-// encode කරලා, digitally sign කරපු string එකක්. Server එකට ඒක verify
-// කරන්ඩ පුලුවන් (secret key එකෙන්), ඒත් client එකට එය tamper (edit) කරන්ඩ
-// බෑ — sign කරද්දි use කරන secret key එක client ට කවදාවත් නොදෙන නිසා.
-
-const JWT_SECRET = process.env.JWT_SECRET!;
-// "why an env variable, not hardcoded?" — මේ secret key එකෙන් තමයි token
-// verify කරන්නෙ. Code එකේම hardcode කළොත් (GitHub වගේ public repo එකකට
-// push කළොත්), ඕනම කෙනෙක්ට fake tokens හදාගන්ඩ පුලුවන් වෙනවා.
-// .env file එකේ දාලා, .gitignore එකෙන් git එකෙන් exclude කරන්ඩ ඕන.
 
 export async function POST(request: Request) {
   try {
@@ -22,29 +12,17 @@ export async function POST(request: Request) {
       typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
 
     // validation for the request data
-    if (!email || !password) {
+    if (!email || typeof password !== "string" || password.length === 0) {
       return NextResponse.json(
         { message: "email and password are required!" },
         { status: 400 },
       );
     }
 
-    // ==============================
-    // F02 fix: rate limiting
-    // ==============================
-    // "why two keys (ip AND email)?" — IP ekatama limit kaloth, kenek
-    // many IP walin (proxy/botnet) ekama email ekata password guess
-    // karanna try karanoth, eka block wenne na. Email ekatama limit
-    // kaloth, dan IP ekak gani godak account ta try karanoth eka block
-    // wenne na. Dekema danawa — ewayin eka ANDAMAK block unath, login
-    // eka reject wenawa.
     const ip = getClientIp(request);
     const ipKey = `login:ip:${ip}`;
     const emailKey = `login:email:${email}`;
 
-    // 10 attempts / 10 minutes per IP, 5 attempts / 10 minutes per email —
-    // email eka athulath account ekak targeted brute-force ekaka risk
-    // eka wediyen thiyena nisa, eka ta limit eka tightai.
     const ipAllowed = rateLimit(ipKey, 10, 10 * 60_000);
     const emailAllowed = rateLimit(emailKey, 5, 10 * 60_000);
 
@@ -97,49 +75,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // ==============================
-    // NEW: Create the JWT token
-    // ==============================
-    // "why put id and role INSIDE the token?" — Middleware/route handlers
-    // ඊළඟ requests වලදි, DB එකට ආයෙත් query එකක් නොකර, token එකෙන්ම
-    // "මේ කවුද, role මොකක්ද" කියලා ඉක්මනට දැනගන්ඩ පුලුවන් වෙන්ඩ.
-    const token = jwt.sign(
-      {
-        id: existingUser.id,
-        role: existingUser.role,
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" }, // "why expiry?" — token එක permanent නම්, කවදාහරි
-      // leak උනොත් (browser history, logs), permanent access එකක් ලැබෙනවා.
-      // Expiry එකකින් ඒ risk window එක limit කරනවා.
-    );
-
-    // successful login, return a successful response
+    // Create the successful login response
     const response = NextResponse.json(
       {
         message: "Login successfully",
-        user: { id: existingUser.id, role: existingUser.role },
+        user: {
+          id: existingUser.id,
+          role: existingUser.role,
+        },
       },
       { status: 200 },
     );
 
-    // ==============================
-    // NEW: Set the token as an httpOnly cookie
-    // ==============================
-    // "why httpOnly?" — JavaScript (document.cookie) එකෙන් මේ cookie එක
-    // read කරන්ඩ බෑ . XSS attack එකකින් (malicious script එකක්
-    // page එකට inject වුණොත්) token එක steal කරගන්ඩ බැරි වෙන්ඩ.
-    response.cookies.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      // "why secure only in production?" — localhost එකේදි HTTPS නැති
-      // නිසා, dev environment එකේදි secure:true දුන්නොත් cookie එකම
-      // set වෙන්නෙ නෑ. Production එකේදි (real HTTPS domain එකක) ඕන.
-      sameSite: "strict",
-      // "why sameSite strict?" — CSRF attacks (වෙන site එකකින් ඔයාගේ
-      // site එකට request එවීම) වළක්වගන්ඩ.
-      maxAge: 60 * 60 * 24 * 7, // 7 days, seconds වලින් (token expiry එකටම match)
-      path: "/",
+    // Sign the JWT and set the secure authentication cookie
+    // using the shared helper.
+    setAuthCookie(response, {
+      id: existingUser.id,
+      role: existingUser.role,
     });
 
     return response;
