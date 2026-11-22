@@ -1,41 +1,17 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, authErrorResponse } from "@/lib/require-admin";
 
 export async function GET() {
+  // F01 fix: kalin methana token eke `role` field eka witharak check kara.
+  // Eyin ADMIN kenek role eka pasuwa CUSTOMER kara dhamma nam, token eka
+  // expire wenakan (days 7k) pana ADMIN access ekama tibuna. Dan database
+  // eken ma current role eka check karanawa.
+  const auth = await requireAdmin();
+  const errorResponse = authErrorResponse(auth);
+  if (errorResponse) return errorResponse;
+
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-
-    if (!token) {
-      return NextResponse.json(
-        { message: "Unauthorized — please log in" },
-        { status: 401 },
-      );
-    }
-
-    let decoded: { id: string; role: string };
-
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-        id: string;
-        role: string;
-      };
-    } catch {
-      return NextResponse.json(
-        { message: "Invalid or expired token" },
-        { status: 401 },
-      );
-    }
-
-    if (decoded.role !== "ADMIN") {
-      return NextResponse.json(
-        { message: "Forbidden — admin access required" },
-        { status: 403 },
-      );
-    }
-
     const products = await prisma.product.findMany({
       include: {
         category: true,

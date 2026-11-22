@@ -3,6 +3,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { rateLimit, getRetryAfterSeconds, getClientIp } from "@/lib/rate-limit";
 
 const EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 
@@ -21,6 +22,36 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: "Email is required" },
         { status: 400 },
+      );
+    }
+
+    // ==============================
+    // F02 fix: rate limiting
+    // ==============================
+    // IP ekata saha email ekata dekatama limit — kenek repeated requests
+    // ekama email ekata (email-bombing / inbox spam) nattam IP ekakin
+    // godak email try karanawa (enumeration) deken ma mehema wala.
+    const ip = getClientIp(request);
+    const ipKey = `forgot-password:ip:${ip}`;
+    const emailKey = `forgot-password:email:${email}`;
+
+    // 5 requests / 15 minutes per IP, 3 requests / 15 minutes per email.
+    const ipAllowed = rateLimit(ipKey, 5, 15 * 60_000);
+    const emailAllowed = rateLimit(emailKey, 3, 15 * 60_000);
+
+    if (!ipAllowed || !emailAllowed) {
+      const retryAfter = Math.max(
+        getRetryAfterSeconds(ipKey),
+        getRetryAfterSeconds(emailKey),
+      );
+      // "why is this safe to say plainly, won't it leak account info?" —
+      // na, me rate-limit check eka database eke user eka balanna KALIN
+      // run wenawa — HAMA email ekatama (exist unath, nathath) ekama
+      // check eka apply wenawa. Eka nisa "too many requests" kiyana eka
+      // itself "me email eka exist wenawada" kiyala help karanne na.
+      return NextResponse.json(
+        { message: "Too many reset requests. Please try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
       );
     }
 
@@ -91,8 +122,10 @@ export async function PUT(request: Request) {
       );
     }
 
+    const tokenHash = hashToken(token);
+
     const record = await prisma.passwordResetToken.findUnique({
-      where: { tokenHash: hashToken(token) },
+      where: { tokenHash },
     });
 
     if (!record || record.expiresAt < new Date()) {
@@ -104,16 +137,64 @@ export async function PUT(request: Request) {
 
     const hashed = await bcrypt.hash(newPassword, 10);
 
-    // Password eka maru karala token eka delete karanawa (link eka ekapaarak witharai)
-    await prisma.$transaction([
-      prisma.user.update({
+    // ==============================
+    // F09 fix: race condition eka
+    // ==============================
+    // "mokada race condition ekak?" — kalin (උඩ code eke) check eka
+    // (findUnique) ekak, pasuwa update eka weradi karala tibbe deyak.
+    // Browser 2k eken (nattam attacker 1ak + real user 1ak) ekama link
+    // eka ekasamana welawaka open karanoth, DEKAMA findUnique eke token
+    // eka "valid" widiyata hambenawa (deken kisima ekak dan delete
+    // karala na nisa) — ewayin DEKAMATA password reset karanna puluwan
+    // wenawa, eka race condition ekak.
+    //
+    // "fix eka mokakda?" — password update karanna KALIN, token row eka
+    // ma CONDITIONALLY delete karanawa ("id ekata saha tokenHash ekata
+    // match wena row ekak dan ithuru welada?" kiyala check karala
+    // witharak delete karanawa). Deken requests dekama athi welawaka
+    // reach unath, Postgres eke row-level lock ekak nisa ONE ekaka
+    // delete eka witharak "count: 1" widiyata success wenawa — anith
+    // eka, eya run wena welawata row eka ALREADY delete wela ithin
+    // "count: 0" widiyata fail wenawa. Eka Inventory service eke stock
+    // deduct karana welawe use karana SAME pattern eka (conditional
+    // update, "F08 - good implementation" kiyala audit eke kiyapu eka).
+    const result = await prisma.$transaction(async (tx) => {
+      const deleted = await tx.passwordResetToken.deleteMany({
+        where: {
+          id: record.id,
+          tokenHash,
+          expiresAt: { gt: new Date() },
+        },
+      });
+
+      if (deleted.count !== 1) {
+        // Already consumed by a concurrent request (nattam me athara
+        // delete unath) — password update karanne na.
+        return { consumed: false as const };
+      }
+
+      await tx.user.update({
         where: { id: record.userId },
-        data: { password: hashed },
-      }),
-      prisma.passwordResetToken.deleteMany({
+        data: {
+          password: hashed,
+          sessionVersion: { increment: 1 },
+        },
+      });
+
+      // User ekata thibba wena reset tokens (thiyenawanam) ain karanawa.
+      await tx.passwordResetToken.deleteMany({
         where: { userId: record.userId },
-      }),
-    ]);
+      });
+
+      return { consumed: true as const };
+    });
+
+    if (!result.consumed) {
+      return NextResponse.json(
+        { message: "This reset link is invalid or has expired." },
+        { status: 400 },
+      );
+    }
 
     return NextResponse.json({ message: "Password reset successfully" });
   } catch (error) {

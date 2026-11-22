@@ -38,26 +38,27 @@ export async function POST(request: Request) {
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
 
-    // Verify කරපු account එකක් තියෙනවා නම් ආයෙත් register කරන්න බෑ
-    if (existingUser?.emailVerified) {
+    // Never overwrite credentials through registration.
+    if (existingUser) {
       return NextResponse.json(
-        { message: "User with this email already exists!" },
-        { status: 400 },
+        {
+          message:
+            "An account with this email already exists. If you have not verified your email, please request a new verification link.",
+        },
+        { status: 409 },
       );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Verify කරලා නැති account එකක් තියෙනවා නම් අලුත් විස්තර වලින් update කරනවා
-    // (වෙන කෙනෙක් ඔයාගේ email එක "අල්ලගන්න" බැරි වෙන්න)
-    const user = existingUser
-      ? await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { name, password: hashedPassword, phone },
-        })
-      : await prisma.user.create({
-          data: { name, email, password: hashedPassword, phone },
-        });
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        phone,
+      },
+    });
 
     // Email යන්නේ නැති වුණත් account එක හැදෙනවා (user ට resend කරන්න පුළුවන්)
     try {
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     if ((error as { code?: string })?.code === "P2002") {
       return NextResponse.json(
         { message: "User with this email already exists!" },
-        { status: 400 },
+        { status: 409 },
       );
     }
     console.error("Registration error:", error);

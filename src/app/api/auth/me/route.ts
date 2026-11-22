@@ -1,19 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/require-admin";
 
-export async function GET(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ user: null }, { status: 401 });
+export async function GET() {
+  const auth = await requireAuth();
+
+  if ("error" in auth) {
+    return NextResponse.json({ user: null }, { status: auth.status });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: string;
-    };
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+      where: { id: auth.user.id },
       select: {
         id: true,
         name: true,
@@ -23,11 +21,15 @@ export async function GET(request: NextRequest) {
         role: true,
       },
     });
+
     if (!user) {
       return NextResponse.json({ user: null }, { status: 401 });
     }
+
     return NextResponse.json({ user });
-  } catch {
-    return NextResponse.json({ user: null }, { status: 401 });
+  } catch (error) {
+    console.error("GET /api/auth/me error:", error);
+
+    return NextResponse.json({ user: null }, { status: 503 });
   }
 }

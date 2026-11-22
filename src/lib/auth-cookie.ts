@@ -12,14 +12,26 @@ const cookieOptions = {
 
 export function setAuthCookie(
   res: NextResponse,
-  user: { id: string; role: string },
+  user: {
+    id: string;
+    role: string;
+    sessionVersion: number;
+  },
 ) {
   const token = jwt.sign(
-    { id: user.id, role: user.role },
+    {
+      id: user.id,
+      role: user.role,
+      sessionVersion: user.sessionVersion,
+    },
+
     process.env.JWT_SECRET!,
     { expiresIn: MAX_AGE },
   );
-  res.cookies.set("token", token, { ...cookieOptions, maxAge: MAX_AGE });
+  res.cookies.set("token", token, {
+    ...cookieOptions,
+    maxAge: MAX_AGE,
+  });
 }
 
 export function clearAuthCookie(res: NextResponse) {

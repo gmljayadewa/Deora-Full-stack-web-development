@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, TX_OPTIONS } from "@/lib/prisma";
-import { getAuth, getUserId } from "@/lib/auth";
+import {
+  requireAuth,
+  requireAdmin,
+  authErrorResponse,
+} from "@/lib/require-admin";
 import { DELIVERY_FEE } from "@/lib/shipping";
 import { decrementStock, OutOfStockError } from "@/services/inventory.service";
 
@@ -17,21 +21,10 @@ type CartLine = { productId: string; quantity: number };
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = getAuth(request);
+    const auth = await requireAdmin();
+    const authError = authErrorResponse(auth);
 
-    if (!auth) {
-      return NextResponse.json(
-        { message: "Unauthorized. Please log in." },
-        { status: 401 },
-      );
-    }
-
-    if (auth.role !== "ADMIN") {
-      return NextResponse.json(
-        { message: "Admin access only." },
-        { status: 403 },
-      );
-    }
+    if (authError) return authError;
 
     const orders = await prisma.order.findMany({
       orderBy: {
@@ -77,13 +70,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = getUserId(request);
-    if (!userId) {
+    const auth = await requireAuth();
+    const authError = authErrorResponse(auth);
+
+    if (authError) return authError;
+
+    if ("error" in auth) {
       return NextResponse.json(
-        { message: "Unauthorized-Please log in" },
-        { status: 401 },
+        { message: auth.error },
+        { status: auth.status },
       );
     }
+
+    const userId = auth.user.id;
 
     const body = await request.json();
 

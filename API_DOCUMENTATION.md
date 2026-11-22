@@ -1,358 +1,63 @@
-# Deora E-Commerce - API Documentation
+# Deora API Reference
 
-Base URL (development): `http://localhost:3000/api`
-Base URL (production): `https://your-domain.vercel.app/api`
+**Base path:** `/api`
+**Implementation:** Next.js App Router route handlers. Authentication uses a JWT HTTP-only cookie, **not NextAuth**.
 
-All request/response bodies are JSON. Authenticated routes require a valid session (NextAuth.js).
+The table below is generated from exported HTTP handler functions in the supplied source snapshot. An endpoint's presence does **not** imply it is publicly accessible. Refer to route code for exact request/response schemas, authorization and validation.
 
----
+| Endpoint | Implemented methods |
+| --- | --- |
+| `/api/admin/blog` | `GET`, `POST`, `PATCH`, `DELETE` |
+| `/api/admin/categories` | `GET` |
+| `/api/admin/inventory` | `GET`, `PATCH` |
+| `/api/admin/products` | `GET` |
+| `/api/ai` | `GET` |
+| `/api/auth/forgot-password` | `POST`, `PUT` |
+| `/api/auth/login` | `POST` |
+| `/api/auth/logout` | `POST` |
+| `/api/auth/me` | `GET` |
+| `/api/auth/register` | `POST` |
+| `/api/auth/verify-email` | `POST`, `PUT` |
+| `/api/cart` | `POST` |
+| `/api/chat` | `POST` |
+| `/api/checkout` | `GET` |
+| `/api/notification` | `GET` |
+| `/api/orders` | `GET`, `POST` |
+| `/api/orders/[orderId]` | `PATCH` |
+| `/api/payment/initiate` | `POST` |
+| `/api/payment/notify` | `POST` |
+| `/api/products` | `GET`, `POST` |
+| `/api/products/[id]` | `PUT`, `DELETE` |
+| `/api/users` | `GET` |
+| `/api/users/[id]` | `GET`, `PUT`, `DELETE` |
 
-## 1. Authentication
+## Important request flows
 
-### Register Customer
-```
-POST /api/auth/register
-```
-**Body:**
-```json
-{
-  "name": "Kasun Perera",
-  "email": "kasun@example.com",
-  "password": "SecurePass123"
-}
-```
-**Response (201):**
-```json
-{
-  "message": "User registered successfully",
-  "user": { "id": "uuid", "name": "Kasun Perera", "email": "kasun@example.com" }
-}
-```
-**Errors:** 400 (validation failed), 409 (email already exists)
+### Authentication
 
----
+- `POST /api/auth/register`: registration and verification workflow
+- `POST /api/auth/login`: credentials validation and JWT session cookie
+- `POST /api/auth/logout`: logout
+- `GET /api/auth/me`: current authenticated user
+- `POST /api/auth/forgot-password`: password-reset workflow; reset increments session version to invalidate previous sessions
+- `/api/auth/verify-email`: email-verification handler (check source for accepted method and payload)
 
-### Login
-```
-POST /api/auth/login
-```
-Handled via NextAuth.js `credentials` provider (`/api/auth/[...nextauth]`).
+### Orders
 
-**Body:**
-```json
-{ "email": "kasun@example.com", "password": "SecurePass123" }
-```
-**Response (200):** session cookie set + user object
-**Errors:** 401 (invalid credentials)
+`POST /api/orders` accepts a `paymentMethod` of `COD`, `BANK` or `WHATSAPP` plus `items` and `shippingAddress`. The server maps these values to payment enums, loads prices from PostgreSQL and decrements inventory in a Prisma transaction before creating the order. It does not accept `CARD` through this method map.
 
----
+`GET /api/orders` is admin-restricted in this snapshot, **not** the customer order-history endpoint described in the old documentation.
 
-### Logout
-```
-POST /api/auth/signout
-```
-Handled by NextAuth.js. Clears session.
+### PayHere
 
----
+`POST /api/payment/initiate` requires authentication and the enabled card-payment flag. It validates items, calculates prices on the server, creates an order/payment and returns PayHere initiation data.
 
-## 2. Products
+`POST /api/payment/notify` accepts PayHere form-data notifications and checks merchant ID, MD5 signature, amount and currency before updating payment/order state. Failure/cancellation handling attempts to restore stock within a transaction.
 
-### Get All Products
-```
-GET /api/products
-```
-**Query params (optional):**
-- `category` – filter by category slug
-- `search` – keyword search by product name
+## HTTP responses
 
-**Response (200):**
-```json
-[
-  {
-    "id": "uuid",
-    "name": "Moringa Capsules",
-    "price": 1200.00,
-    "category": "Herbal Capsules",
-    "stock": 25,
-    "image": "url",
-    "status": "active"
-  }
-]
-```
+Typical status codes include `200`, `201`, `400`, `401`, `403`, `404`, `409` and `500`, depending on the handler. Do not assume the same JSON envelope for every endpoint; consult each route's source or a tested API collection.
 
-### Get Single Product
-```
-GET /api/products/[id]
-```
-**Response (200):** full product object (description, ingredients, benefits, stock, price)
-**Errors:** 404 (not found)
+## Source of truth
 
-### Create Product (Admin only)
-```
-POST /api/products
-```
-**Auth:** Admin session required
-**Body:**
-```json
-{
-  "name": "Turmeric Capsules",
-  "description": "Pure turmeric root extract",
-  "price": 1100.00,
-  "categoryId": "uuid",
-  "sku": "DEO-TUR-30",
-  "stock": 30,
-  "image": "url"
-}
-```
-**Response (201):** created product object
-**Errors:** 401 (not authenticated), 403 (not admin), 400 (validation)
-
-### Update Product (Admin only)
-```
-PUT /api/products/[id]
-```
-**Auth:** Admin session required
-**Body:** any subset of product fields
-**Response (200):** updated product object
-
-### Delete Product (Admin only - soft delete)
-```
-DELETE /api/products/[id]
-```
-**Auth:** Admin session required
-**Response (200):** `{ "message": "Product deactivated" }`
-
----
-
-## 3. Categories
-
-### Get All Categories
-```
-GET /api/categories
-```
-**Response (200):**
-```json
-[
-  { "id": "uuid", "name": "Herbal Capsules" },
-  { "id": "uuid", "name": "Herbal Tea" }
-]
-```
-
----
-
-## 4. Cart
-
-### Get Cart (Logged-in user)
-```
-GET /api/cart
-```
-**Auth:** Customer session required
-**Response (200):**
-```json
-{
-  "items": [
-    { "productId": "uuid", "name": "Moringa Capsules", "price": 1200, "quantity": 1 }
-  ],
-  "subtotal": 1200
-}
-```
-
-### Add Item to Cart
-```
-POST /api/cart
-```
-**Auth:** Customer session required
-**Body:**
-```json
-{ "productId": "uuid", "quantity": 1 }
-```
-**Response (200):** updated cart object
-
-### Update Cart Item Quantity
-```
-PUT /api/cart/[itemId]
-```
-**Body:** `{ "quantity": 2 }`
-**Response (200):** updated cart object
-
-### Remove Cart Item
-```
-DELETE /api/cart/[itemId]
-```
-**Response (200):** `{ "message": "Item removed" }`
-
----
-
-## 5. Orders / Checkout
-
-### Create Order (Checkout)
-```
-POST /api/orders
-```
-**Auth:** Customer session required
-**Body:**
-```json
-{
-  "shippingDetails": {
-    "fullName": "Kasun Perera",
-    "phone": "0771234567",
-    "email": "kasun@example.com",
-    "addressLine1": "123 Main St",
-    "city": "Kandy",
-    "district": "Kandy",
-    "postalCode": "20000"
-  },
-  "paymentMethod": "COD"
-}
-```
-**Behavior:**
-1. Validates cart is not empty
-2. Checks stock availability for each item
-3. Creates `Order` + `OrderItem` records
-4. Decrements product stock
-5. If `paymentMethod` is `PayHere`, initiates payment gateway session
-6. Triggers n8n webhook for order confirmation (email/WhatsApp)
-
-**Response (201):**
-```json
-{
-  "orderId": "uuid",
-  "status": "Pending",
-  "total": 3640.00
-}
-```
-**Errors:** 400 (out of stock / empty cart), 401 (not authenticated)
-
-### Get Customer Order History
-```
-GET /api/orders
-```
-**Auth:** Customer session required
-**Response (200):** array of the logged-in customer's orders
-
-### Get Single Order
-```
-GET /api/orders/[id]
-```
-**Auth:** Customer (own order) or Admin
-**Response (200):** full order detail with items
-
-### Update Order Status (Admin only)
-```
-PUT /api/orders/[id]
-```
-**Auth:** Admin session required
-**Body:**
-```json
-{ "status": "Processing" }
-```
-**Allowed statuses:** `Pending`, `Paid`, `Processing`, `Shipped`, `Delivered`, `Cancelled`
-**Response (200):** updated order object
-
----
-
-## 6. Inventory (Admin)
-
-### Get Low Stock Products
-```
-GET /api/inventory/low-stock
-```
-**Auth:** Admin session required
-**Response (200):** products where `stock <= 10`
-
-### Adjust Stock
-```
-PUT /api/inventory/[productId]
-```
-**Auth:** Admin session required
-**Body:** `{ "stock": 50 }`
-**Response (200):** updated product stock
-
----
-
-## 7. Payment (PayHere - Sandbox)
-
-### Initiate Payment
-```
-POST /api/payment/initiate
-```
-**Body:** `{ "orderId": "uuid" }`
-**Response (200):** PayHere sandbox checkout URL / payment session data
-
-### Payment Webhook (PayHere callback)
-```
-POST /api/payment/webhook
-```
-Called by PayHere after payment attempt. Updates order `status` and `Payment` record based on success/failure.
-
----
-
-## 8. AI Chatbot
-
-### Send Message to AI Assistant
-```
-POST /api/chatbot
-```
-**Body:**
-```json
-{ "message": "What are the benefits of Moringa Capsules?" }
-```
-**Response (200):**
-```json
-{ "reply": "Moringa Capsules support immunity, energy, and overall well-being..." }
-```
-**Notes:** Uses OpenAI API with product knowledge base as context (per AI-002, AI-006 in SRS - no invented prices/details).
-
----
-
-## 9. Admin Dashboard
-
-### Get Dashboard Summary
-```
-GET /api/admin/dashboard
-```
-**Auth:** Admin session required
-**Response (200):**
-```json
-{
-  "totalSales": 245800,
-  "totalOrders": 128,
-  "totalCustomers": 246,
-  "totalProducts": 42
-}
-```
-
----
-
-## Authentication & Authorization Summary
-
-| Route Pattern | Access |
-|---|---|
-| `/api/auth/*` | Public |
-| `/api/products` (GET) | Public |
-| `/api/products` (POST/PUT/DELETE) | Admin only |
-| `/api/cart/*` | Logged-in Customer |
-| `/api/orders` (POST/GET own) | Logged-in Customer |
-| `/api/orders/[id]` (PUT status) | Admin only |
-| `/api/inventory/*` | Admin only |
-| `/api/admin/*` | Admin only |
-| `/api/chatbot` | Public (or logged-in, TBD) |
-
----
-
-## Status Codes Reference
-
-| Code | Meaning |
-|---|---|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request / Validation Error |
-| 401 | Unauthorized (not logged in) |
-| 403 | Forbidden (logged in, wrong role) |
-| 404 | Not Found |
-| 409 | Conflict (e.g., duplicate email) |
-| 500 | Server Error |
-
----
-
-*This document reflects the MVP scope defined in the SRS (v1.1). Advanced endpoints (returns/refunds, multi-shipping methods, bulk product import) are deferred to Future Enhancements (SRS Section 5.4).*
+This reference intentionally avoids inventing example payload fields or routes. For precise schemas, inspect `src/app/api/**/route.ts`, `src/lib/require-admin.ts` and `prisma/schema.prisma`.

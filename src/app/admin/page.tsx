@@ -1,34 +1,9 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import jwt from "jsonwebtoken";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 
-type AdminToken = {
-  id: string;
-  role: string;
-};
-
-async function requireAdmin() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) {
-    redirect("/admin/login");
-  }
-
-  let decoded: AdminToken;
-
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!) as AdminToken;
-  } catch {
-    redirect("/admin/login");
-  }
-
-  if (decoded.role !== "ADMIN") {
-    redirect("/admin/login");
-  }
-}
+export const dynamic = "force-dynamic";
 
 const money = (value: number) =>
   `LKR ${value.toLocaleString("en-LK", {
@@ -172,7 +147,15 @@ function DashboardIcon({ name }: { name: string }) {
 }
 
 export default async function AdminDashboardPage() {
-  await requireAdmin();
+  const auth = await requireAdmin();
+
+  if ("error" in auth) {
+    if (auth.status >= 500) {
+      throw new Error("Authentication service unavailable");
+    }
+
+    redirect("/admin/login");
+  }
 
   const [
     totalOrders,

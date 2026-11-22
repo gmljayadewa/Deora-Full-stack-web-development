@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { OrderStatus, PaymentStatus } from "@prisma/client";
 import { prisma, TX_OPTIONS } from "@/lib/prisma";
-import { getAuth } from "@/lib/auth";
+import { requireAdmin, authErrorResponse } from "@/lib/require-admin";
 import { restoreStock } from "@/services/inventory.service";
 
 // නීති කඩවුණාම යවන error එක (status code එකත් එක්ක)
@@ -54,19 +54,10 @@ export async function PATCH(
   { params }: { params: Params },
 ) {
   try {
-    const auth = getAuth(request);
-    if (!auth) {
-      return NextResponse.json(
-        { message: "Unauthorized-Please log in" },
-        { status: 401 },
-      );
-    }
-    if (auth.role !== "ADMIN") {
-      return NextResponse.json(
-        { message: "Admin access only" },
-        { status: 403 },
-      );
-    }
+    const auth = await requireAdmin();
+    const authError = authErrorResponse(auth);
+
+    if (authError) return authError;
 
     const { orderId } = await params;
     const body = await request.json();

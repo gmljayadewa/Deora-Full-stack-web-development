@@ -1,46 +1,18 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin, authErrorResponse } from "@/lib/require-admin";
 
-async function requireAdmin() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) return { error: "Unauthorized", status: 401 };
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: string;
-    };
-
-    // Verify the user's current role in the database.
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, role: true },
-    });
-
-    if (!user || user.role !== "ADMIN") {
-      return { error: "Admin access required", status: 403 };
-    }
-
-    return { user };
-  } catch {
-    return { error: "Invalid or expired session", status: 401 };
-  }
-}
+// F01 cleanup: me file eke tibba local requireAdmin() eka hari (DB role
+// check karala tibba), eth eka copy-paste kara code ekak unu. Dan
+// /src/lib/require-admin.ts eke SHARED version ekama use karanawa — eka
+// nisa pasuwa fix ekak one unoth, ONE place ekak witharak edit kale madi.
 
 export async function GET() {
+  const auth = await requireAdmin();
+  const errorResponse = authErrorResponse(auth);
+  if (errorResponse) return errorResponse;
+
   try {
-    const auth = await requireAdmin();
-
-    if ("error" in auth) {
-      return NextResponse.json(
-        { message: auth.error },
-        { status: auth.status },
-      );
-    }
-
     const products = await prisma.product.findMany({
       select: {
         id: true,

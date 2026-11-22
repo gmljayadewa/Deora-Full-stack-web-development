@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
+import { requireAdmin, authErrorResponse } from "@/lib/require-admin";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -8,76 +7,6 @@ type BlogContentType = "BLOG" | "VLOG";
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ message }, { status });
-}
-
-async function requireAdmin() {
-  const secret = process.env.JWT_SECRET;
-
-  if (!secret) {
-    console.error("JWT_SECRET is not configured");
-
-    return {
-      ok: false as const,
-      response: jsonError("Server authentication is not configured", 500),
-    };
-  }
-
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) {
-    return {
-      ok: false as const,
-      response: jsonError("Please log in", 401),
-    };
-  }
-
-  let userId: string;
-
-  try {
-    const decoded = jwt.verify(token, secret);
-
-    if (
-      typeof decoded === "string" ||
-      typeof decoded.id !== "string" ||
-      !decoded.id
-    ) {
-      return {
-        ok: false as const,
-        response: jsonError("Invalid session", 401),
-      };
-    }
-
-    userId = decoded.id;
-  } catch {
-    return {
-      ok: false as const,
-      response: jsonError("Invalid or expired session", 401),
-    };
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, role: true },
-    });
-
-    if (!user || user.role !== "ADMIN") {
-      return {
-        ok: false as const,
-        response: jsonError("Admin access required", 403),
-      };
-    }
-
-    return { ok: true as const, user };
-  } catch (error) {
-    console.error("Admin authentication database error:", error);
-
-    return {
-      ok: false as const,
-      response: jsonError("Failed to verify admin access", 500),
-    };
-  }
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -238,10 +167,9 @@ function isValidReadTime(value: unknown): value is string {
 export async function GET() {
   try {
     const auth = await requireAdmin();
+    const authError = authErrorResponse(auth);
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+    if (authError) return authError;
 
     const posts = await prisma.blogPost.findMany({
       orderBy: { updatedAt: "desc" },
@@ -260,10 +188,9 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const auth = await requireAdmin();
+    const authError = authErrorResponse(auth);
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+    if (authError) return authError;
 
     let body: unknown;
 
@@ -400,10 +327,9 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const auth = await requireAdmin();
+    const authError = authErrorResponse(auth);
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+    if (authError) return authError;
 
     let body: unknown;
 
@@ -566,10 +492,9 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const auth = await requireAdmin();
+    const authError = authErrorResponse(auth);
 
-    if (!auth.ok) {
-      return auth.response;
-    }
+    if (authError) return authError;
 
     const id = new URL(request.url).searchParams.get("id");
 
